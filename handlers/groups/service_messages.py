@@ -1,7 +1,7 @@
 import aiogram
 from aiogram import types
 
-from data.config import ADMINS
+from data.config import ADMINS, BOT_ID
 from filters.group_chat import IsGroup
 from loader import dp, bot, db
 
@@ -30,7 +30,7 @@ async def new_member(message: types.Message):
                     chat_id=ADMINS[0],
                     text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhiga qo'shildi!"
                 )
-                await db.add_group(group_id=(await bot.me).id)
+                await db.add_group(group_id=message.chat.id)
             # Yangi a'zo uchun HTML formatida mention
             mention = member.get_mention(name=member.first_name, as_html=True)
             member_mentions.append(mention)
@@ -59,18 +59,17 @@ async def banned_member(message: types.Message):
 
         else:
             # Admin tomonidan haydalgan foydalanuvchi
-            await message.answer(f"{left_member.full_name} guruhdan haydaldi "
-                                 f"\n\nAdmin: {message.from_user.get_mention(as_html=True)}.")
-
-        # Xabarni o'chirish
-        await message.delete()
+            if left_member.id == BOT_ID:
+                await bot.send_message(
+                    chat_id=ADMINS[0],
+                    text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
+                )
+                await db.delete_group(group_id=message.chat.id)
+            else:
+                await message.answer(f"{left_member.full_name} guruhdan haydaldi "
+                                     f"\n\nAdmin: {message.from_user.get_mention(as_html=True)}.")
+                # Xabarni o'chirish
+                await message.delete()
 
     except aiogram.exceptions.MessageCantBeDeleted:
         await send_alert(message=message, text=alert_message("guruhdan chiqqanligi"))
-
-    except aiogram.exceptions.BotKicked:
-        await bot.send_message(
-            chat_id=ADMINS[0],
-            text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
-        )
-        await db.delete_group(group_id=(await bot.me).id)

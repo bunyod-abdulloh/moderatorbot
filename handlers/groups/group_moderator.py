@@ -7,9 +7,8 @@ from aiogram import types
 from aiogram.dispatcher.filters import Command
 from aiogram.utils.exceptions import BadRequest
 
-from data.config import GROUP_IDS
 from filters import IsGroup, AdminFilter
-from loader import dp, bot
+from loader import dp
 
 
 # /ro oki !ro (read-only) komandalari uchun handler
@@ -18,32 +17,12 @@ from loader import dp, bot
 async def read_only_mode(message: types.Message):
     member = message.reply_to_message.from_user
     member_id = member.id
-    chat_id = message.chat.id
     command_parse = re.compile(r"(!ro|/ro) ?(\d+)? ?([\w+\D]+)?")
     parsed = command_parse.match(message.text)
     time = parsed.group(2)
     comment = parsed.group(3)
     if not time:
         time = 5
-
-    """
-    !ro 
-    !ro 5 
-    !ro 5 test
-    !ro test
-    !ro test test test
-    /ro 
-    /ro 5 
-    /ro 5 test
-    /ro test
-    """
-    # 5-minutga izohsiz cheklash
-    # !ro 5
-    # command='!ro' time='5' comment=[]
-
-    # 50 minutga izoh bilan cheklash
-    # !ro 50 reklama uchun ban
-    # command='!ro' time='50' comment=['reklama', 'uchun', 'ban']
 
     time = int(time)
 
@@ -57,15 +36,19 @@ async def read_only_mode(message: types.Message):
         await message.answer(f"Xatolik! {err.args}")
         return
 
-    # Пишем в чат
-    await message.answer(f"Foydalanuvchi {message.reply_to_message.from_user.full_name} {time} minut yozish huquqidan mahrum qilindi.\n"
-                         f"Sabab: \n<b>{comment}</b>")
+    msg = f"Foydalanuvchi {message.reply_to_message.from_user.full_name} {time} minut yozish huquqidan mahrum qilindi.\n"
+    if comment:
+        await message.answer(
+            text=f"{msg}Sabab:\n<b>{comment}</b>")
+    else:
+        await message.answer(text=msg)
 
     service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
     # 5 sekun kutib xabarlarni o'chirib tashlaymiz
     await asyncio.sleep(5)
     await message.delete()
     await service_message.delete()
+
 
 # read-only holatdan qayta tiklaymiz
 @dp.message_handler(IsGroup(), Command("unro", prefixes="!/"), AdminFilter())
@@ -94,6 +77,7 @@ async def undo_read_only_mode(message: types.Message):
     await message.delete()
     await service_message.delete()
 
+
 # Foydalanuvchini banga yuborish (guruhdan haydash)
 @dp.message_handler(IsGroup(), Command("ban", prefixes="!/"), AdminFilter())
 async def ban_user(message: types.Message):
@@ -108,6 +92,7 @@ async def ban_user(message: types.Message):
     await asyncio.sleep(5)
     await message.delete()
     await service_message.delete()
+
 
 # Foydalanuvchini bandan chiqarish, foydalanuvchini guruhga qo'sha olmaymiz (o'zi qo'shilishi mumkin)
 @dp.message_handler(IsGroup(), Command("unban", prefixes="!/"), AdminFilter())
