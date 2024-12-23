@@ -15,7 +15,9 @@ async def bot_start(message: types.Message, state: FSMContext):
                          f"\n/ro - Foydalanuvchini Read Only rejimiga o'tkazish"
                          f"\n/unro - RO rejimidan chiqarish"
                          f"\n/ban - Ban"
-                         f"\n/unban - Bandan chiqarish")
+                         f"\n/unban - Bandan chiqarish"
+                         f"\n\nUshbu buyruqlar botni biror guruhga admin qilganingizda ishlaydi!")
+
     try:
         await db.add_user(message.from_user.id)
     except asyncpg.exceptions.UniqueViolationError:
