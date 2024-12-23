@@ -61,12 +61,8 @@ class Database:
     # =========================== TABLE | USERS ===========================
     async def add_user(self, telegram_id):
         """ Add a user to the private table. """
-        sql_insert = "INSERT INTO users (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING"
-        user = await self.execute(sql_insert, telegram_id, fetchrow=True)
-        if not user:
-            sql_select = "SELECT id FROM private WHERE telegram_id=$1"
-            user = await self.execute(sql_select, telegram_id, fetchrow=True)
-        return user
+        sql_insert = "INSERT INTO users (telegram_id) VALUES ($1)"
+        return await self.execute(sql_insert, telegram_id, fetchrow=True)
 
     async def count_users(self):
         sql = "SELECT COUNT(*) FROM users"
