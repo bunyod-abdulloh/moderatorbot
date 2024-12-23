@@ -171,7 +171,7 @@ async def send_media_to_groups_two(message: types.Message, album: List[types.Mes
     try:
         media_group = await handle_media_group(album)
     except Exception as err:
-        await message.answer(f"Media qo'shishda xatolik!:\n{err}")
+        await message.answer(f"Media qo'shishda xatolik!:\n\n{err}")
         return
 
     groups = await db.get_groups()
