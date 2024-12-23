@@ -133,7 +133,7 @@ async def send_to_groups(message: types.Message, groups: List[dict], media_group
     return success_count, failed_count
 
 
-@dp.message_handler(F.text == "🧑\u200d💻 Oddiy habar yuborish")
+@dp.message_handler(IsBotAdminFilter(), F.text == "🧑💻 Oddiy habar yuborish")
 async def send_to_bot_users_handler(message: types.Message):
     if await db.get_send_status():
         await message.answer(
@@ -155,7 +155,7 @@ async def send_to_bot_users_two(message: types.Message, state: FSMContext):
     await state.finish()
 
 
-@dp.message_handler(F.text == "🖇 Mediagroup habar yuborish")
+@dp.message_handler(IsBotAdminFilter(), F.text == "🖇 Mediagroup habar yuborish")
 async def send_media_to_groups_handler(message: types.Message):
     if await db.get_send_status():
         await message.answer(
