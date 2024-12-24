@@ -93,6 +93,11 @@ class Database:
         sql = "SELECT group_id FROM groups"
         return await self.execute(sql, fetch=True)
 
+    async def get_group(self, group_id):
+        """ Guruhni ID siga ko'ra ajratib oluvchi funksiya """
+        sql = "SELECT group_id FROM groups WHERE group_id=$1"
+        return await self.execute(sql, group_id, fetchval=True)
+
     async def delete_group(self, group_id):
         await self.execute("DELETE FROM groups WHERE group_id=$1", group_id, execute=True)
 

@@ -24,7 +24,7 @@ async def new_member(message: types.Message):
 
         # Iterate through new members
         for member in message.new_chat_members:
-            if member.id == (await bot.me).id:
+            if member.id == BOT_ID:
                 # Bot qo'shilganida administratorlarga xabar yuborish
                 await bot.send_message(
                     chat_id=ADMINS[0],
