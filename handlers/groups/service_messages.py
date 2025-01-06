@@ -1,20 +1,21 @@
 import aiogram
 from aiogram import types
+from magic_filter import F
 
 from data.config import ADMINS, BOT_ID
-from filters.group_chat import IsGroup
+from filters.group_chat import IsGroup, IsGroupPhoto, is_admin
 from loader import dp, bot, db
 
 
-def alert_message(message):
-    text = (f"Bot guruhga admin qilinmaganligi sababli foydalanuvchi {message} haqidagi habarni "
+async def alert_message(alert_text, message: types.Message):
+    text = (f"Bot guruhga admin qilinmaganligi sababli foydalanuvchi {alert_text} haqidagi habarni "
             "o'chirmadi!\n\nBot to'g'ri ishlashi uchun botni guruhga admin qilishingiz lozim!")
-    return text
-
-
-async def send_alert(message, text):
-    """Common function to send alert message and delete the original."""
     await message.answer(text)
+
+
+# async def send_alert(message, text):
+#     """Common function to send alert message and delete the original."""
+#     await message.answer(text)
 
 
 @dp.message_handler(IsGroup(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
@@ -46,8 +47,7 @@ async def new_member(message: types.Message):
         await message.delete()
 
     except aiogram.exceptions.MessageCantBeDeleted:
-        # Xatolik yuzaga kelganida xabar yuborish
-        await send_alert(message=message, text=alert_message(message="guruhga qo'shilganligi"))
+        await alert_message(alert_text="guruhga qo'shilganligi", message=message)
 
 
 @dp.message_handler(IsGroup(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
@@ -72,4 +72,14 @@ async def banned_member(message: types.Message):
                 await message.delete()
 
     except aiogram.exceptions.MessageCantBeDeleted:
-        await send_alert(message=message, text=alert_message("guruhdan chiqqanligi"))
+        await alert_message(alert_text="guruhdan chiqqanligi", message=message)
+
+
+@dp.message_handler(IsGroupPhoto(), content_types=types.ContentType.PHOTO, state="*")
+async def delete_non_admin_photos(message: types.Message):
+    """Admin bo'lmagan foydalanuvchi rasm yuborsa, xabar o'chiriladi."""
+    if not await is_admin(bot, message.chat.id, message.from_user.id):
+        await message.delete()
+        await message.answer(
+            f"⚠️ {message.from_user.full_name}, faqat administratorlar rasm yuborishi mumkin!"
+        )
