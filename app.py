@@ -2,7 +2,6 @@ from aiogram import executor
 
 from loader import dp, db
 import middlewares, filters, handlers
-from middlewares.media_group import AlbumMiddleware
 from utils.notify_admins import on_startup_notify
 from utils.set_bot_commands import set_default_commands
 
@@ -13,6 +12,7 @@ async def on_startup(dispatcher):
     await db.create()
     # await db.drop_table_groups()
     # await db.drop_table_users()
+    # await db.drop_table_count_users()
     await db.create_tables()
 
 

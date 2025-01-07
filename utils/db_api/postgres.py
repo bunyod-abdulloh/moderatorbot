@@ -2,6 +2,7 @@ from typing import Union
 
 import asyncpg
 from asyncpg import Connection, Pool
+
 from data import config
 
 
@@ -42,9 +43,16 @@ class Database:
             );
             """,
             """
+            CREATE TABLE IF NOT EXISTS count_users (                
+                inviter_id BIGINT NOT NULL UNIQUE,
+                count INTEGER DEFAULT 0
+            );
+            """,
+            """
             CREATE TABLE IF NOT EXISTS groups (
-                id SERIAL PRIMARY KEY,
-                group_id BIGINT NOT NULL UNIQUE
+                telegram_id BIGINT NULL,
+                group_id BIGINT NOT NULL UNIQUE,
+                users INTEGER DEFAULT 0                
             );
             """,
             """
@@ -61,8 +69,8 @@ class Database:
     # =========================== TABLE | USERS ===========================
     async def add_user(self, telegram_id):
         """ Add a user to the private table. """
-        sql_insert = "INSERT INTO users (telegram_id) VALUES ($1)"
-        return await self.execute(sql_insert, telegram_id, fetchrow=True)
+        sql = "INSERT INTO users (telegram_id) VALUES ($1)"
+        return await self.execute(sql, telegram_id, fetchrow=True)
 
     async def count_users(self):
         sql = "SELECT COUNT(*) FROM users"
@@ -78,15 +86,36 @@ class Database:
     async def drop_table_users(self):
         await self.execute("DROP TABLE users", execute=True)
 
+    # =========================== TABLE | COUNT_USERS ===========================
+    async def add_user_to_count_users(self, inviter_id):
+        """ Add a user to the private table. """
+        sql = "INSERT INTO count_users (inviter_id) VALUES ($1)"
+        return await self.execute(sql, inviter_id, fetchrow=True)
+
+    async def update_user_count(self, inviter_id):
+        sql = "UPDATE count_users SET count = count + 1 WHERE inviter_id = $1"
+        return await self.execute(sql, inviter_id, execute=True)
+
+    async def count_users_inviter(self, inviter_id):
+        sql = "SELECT count FROM count_users WHERE inviter_id=$1"
+        return await self.execute(sql, inviter_id, fetchval=True)
+
+    async def drop_table_count_users(self):
+        await self.execute("DROP TABLE count_users", execute=True)
+
     # =========================== TABLE | GROUPS ===========================
-    async def add_group(self, group_id):
+    async def add_group(self, telegram_id, group_id):
         """ Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya """
-        sql_insert = " INSERT INTO groups(group_id) VALUES($1) ON CONFLICT(group_id) DO NOTHING"
-        group = await self.execute(sql_insert, group_id, fetchrow=True)
+        sql = " INSERT INTO groups(telegram_id, group_id) VALUES($1, $2) ON CONFLICT(group_id) DO NOTHING"
+        group = await self.execute(sql, telegram_id, group_id, fetchrow=True)
         if not group:
-            sql_select = "SELECT id FROM groups WHERE group_id=$1"
+            sql_select = "SELECT * FROM groups WHERE group_id=$1"
             group = await self.execute(sql_select, group_id, fetchrow=True)
         return group
+
+    async def update_add_user(self, users, group_id):
+        sql = "UPDATE groups SET users = $1 WHERE group_id = $2"
+        return await self.execute(sql, users, group_id, execute=True)
 
     async def get_groups(self):
         """ Guruhni ID siga ko'ra ajratib oluvchi funksiya """
@@ -95,8 +124,12 @@ class Database:
 
     async def get_group(self, group_id):
         """ Guruhni ID siga ko'ra ajratib oluvchi funksiya """
-        sql = "SELECT group_id FROM groups WHERE group_id=$1"
-        return await self.execute(sql, group_id, fetchval=True)
+        sql = "SELECT * FROM groups WHERE group_id=$1"
+        return await self.execute(sql, group_id, fetchrow=True)
+
+    async def get_group_by_user(self, telegram_id):
+        sql = "SELECT * FROM groups WHERE telegram_id=$1"
+        return await self.execute(sql, telegram_id, fetch=True)
 
     async def delete_group(self, group_id):
         await self.execute("DELETE FROM groups WHERE group_id=$1", group_id, execute=True)
