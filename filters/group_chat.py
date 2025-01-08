@@ -34,6 +34,16 @@ class IsGroupAdminOrOwner(BoundFilter):
         return member.status in [types.ChatMemberStatus.ADMINISTRATOR, types.ChatMemberStatus.CREATOR]
 
 
+# Faqat yangi a'zolarni tekshirish uchun filter
+class IsNewChatMember(BoundFilter):
+    async def check(self, update: types.ChatMemberUpdated) -> bool:
+        # Eski status LEFT yoki KICKED va yangi status MEMBER yoki RESTRICTED bo'lsa
+        return (
+                update.old_chat_member.status in [types.ChatMemberStatus.LEFT, types.ChatMemberStatus.KICKED]
+                and update.new_chat_member.status in [types.ChatMemberStatus.MEMBER, types.ChatMemberStatus.RESTRICTED]
+        )
+
+
 async def is_admin(bot: Bot, chat_id: int, user_id: int) -> bool:
     """Foydalanuvchi guruh administratori ekanligini tekshirish."""
     member = await bot.get_chat_member(chat_id, user_id)

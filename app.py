@@ -12,7 +12,7 @@ async def on_startup(dispatcher):
     await db.create()
     # await db.drop_table_groups()
     # await db.drop_table_users()
-    # await db.drop_table_count_users()
+    await db.drop_table_count_users()
     await db.create_tables()
 
 
