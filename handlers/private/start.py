@@ -2,9 +2,8 @@ import asyncpg.exceptions
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
-from magic_filter import F
-
-from keyboards.default.user_dbuttons import user_main_dbuttons
+from aiogram.utils.exceptions import MessageCantBeDeleted
+from keyboards.inline.user_ibuttons import user_main_ibuttons
 from loader import dp, db
 
 
@@ -23,12 +22,17 @@ async def bot_start(message: types.Message, state: FSMContext):
              "(jpg, telefon) raqam, havola) shakldagilarni, hamda guruhga foydalanuvchi chiqgani va kirgani haqidagi "
              "xabarni o'chiraman. Mendan to'laqonli foydalanish uchun guruhingizga qo'shib keyin adminlik berishingiz "
              "kerak. Meni boshqa botlardan afzalligim reklamalar jo'natmayman.")
-    await message.answer(text=text_, reply_markup=user_main_dbuttons)
 
     try:
+        if message.get_args():
+            await message.delete()
+        else:
+            await message.answer(text=text_, reply_markup=user_main_ibuttons())
         await db.add_user(message.from_user.id)
     except asyncpg.exceptions.UniqueViolationError:
         pass
-    else:
+    except MessageCantBeDeleted:
+        pass
+    except Exception:
         pass
     await state.finish()

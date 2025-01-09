@@ -3,11 +3,16 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from loader import db, bot
 
 
-def user_main_ibuttons(group_id):
-    markup = InlineKeyboardMarkup(row_width=3)
-    for button in range(4):
-        markup.insert(InlineKeyboardButton(
-            text=f"{button}", callback_data=f"user:{group_id}"
+def user_main_ibuttons():
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton(
+            text="🤖 Botni guruhga qo'shish", url="https://telegram.me/muhibsamplebot?startgroup=true"),
+        InlineKeyboardButton(
+            text="➕ Guruhda odam ko'paytirish", callback_data="increase_members"
+        ),
+        InlineKeyboardButton(
+            text="📱 Admin bilan aloqa", callback_data="call_with_admin"
         ))
     return markup
 
@@ -17,7 +22,7 @@ add_user_to_group_ibuttons.add(InlineKeyboardButton(text="✅ Yoqish", callback_
 add_user_to_group_ibuttons.insert(InlineKeyboardButton(text="❌ O'chirish", callback_data="off_add_user"))
 
 
-async def get_groups_ibuttons(telegram_id, user_groups):
+async def get_groups_ibuttons(user_groups):
     markup = InlineKeyboardMarkup(row_width=1)
     for group in user_groups:
         group_name = (await bot.get_chat(chat_id=group['group_id'])).full_name
