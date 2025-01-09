@@ -7,13 +7,7 @@ def user_main_ibuttons():
     markup = InlineKeyboardMarkup(row_width=1)
     markup.add(
         InlineKeyboardButton(
-            text="🤖 Botni guruhga qo'shish", url="https://telegram.me/muhibsamplebot?startgroup=true"),
-        InlineKeyboardButton(
-            text="➕ Guruhda odam ko'paytirish", callback_data="increase_members"
-        ),
-        InlineKeyboardButton(
-            text="📱 Admin bilan aloqa", callback_data="call_with_admin"
-        ))
+            text="🤖 Botni guruhga qo'shish", url="https://telegram.me/muhibsamplebot?startgroup=true"))
     return markup
 
 
@@ -27,4 +21,10 @@ async def get_groups_ibuttons(user_groups):
     for group in user_groups:
         group_name = (await bot.get_chat(chat_id=group['group_id'])).full_name
         markup.add(InlineKeyboardButton(text=group_name, callback_data=f"usergroup_{group['group_id']}"))
+    return markup
+
+
+def send_message_to_admin(user_id):
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(InlineKeyboardButton(text="Javob yuborish", callback_data=f"user_message:{user_id}"))
     return markup

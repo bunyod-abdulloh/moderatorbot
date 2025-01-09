@@ -5,6 +5,7 @@ from magic_filter import F
 from keyboards.inline.user_ibuttons import add_user_to_group_ibuttons, get_groups_ibuttons
 from loader import dp, db
 from states.user import UserStates
+from utils.user_functions import cancel_text
 
 
 @dp.message_handler(F.text == "➕ Guruhda odam ko'paytirish", state="*")
@@ -22,7 +23,7 @@ async def add_user_to_group_callback(call: types.CallbackQuery):
     user_groups = await db.get_group_by_user(telegram_id=call.from_user.id)
     if user_groups:
         await call.message.edit_text(text="Guruhingizni tanlang", reply_markup=await get_groups_ibuttons(
-            call.from_user.id, user_groups
+            user_groups
         ))
     else:
         await call.message.edit_text(text="Sizda bot qo'shilgan guruh mavjud emas!")
@@ -31,11 +32,15 @@ async def add_user_to_group_callback(call: types.CallbackQuery):
 @dp.callback_query_handler(F.data.startswith("usergroup_"))
 async def user_group_callback(call: types.CallbackQuery, state: FSMContext):
     group_id = int(call.data.split("_")[1])
-    await state.update_data(group_id=group_id)
-    await call.message.edit_text(
-        text="Guruhingizga nechta odam qo'shilganidan so'ng xabar yuborish ochilishini istaysiz?!\n\nIltimos, "
-             "faqat raqam kiriting")
-    await UserStates.NUMBER_OF_USERS.set()
+    get_group = await db.get_group(group_id)
+    if get_group['users'] > 0:
+        await call.message.edit_text(text=f"Xizmat yoqilgan! Qo'shiladigan odam soni: {get_group['users']}")
+    else:
+        await state.update_data(group_id=group_id)
+        await call.message.edit_text(
+            text=f"Guruhingizga nechta odam qo'shilganidan so'ng xabar yuborish ochilishini istaysiz?\n{cancel_text}\n\n"
+                 f"Iltimos, faqat raqam kiriting")
+        await UserStates.NUMBER_OF_USERS.set()
 
 
 @dp.message_handler(state=UserStates.NUMBER_OF_USERS)

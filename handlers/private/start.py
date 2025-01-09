@@ -1,10 +1,19 @@
-import asyncpg.exceptions
+import logging
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import CommandStart
-from aiogram.utils.exceptions import MessageCantBeDeleted
+from aiogram.dispatcher.filters.builtin import CommandStart, Command
+from magic_filter import F
+
+from keyboards.default.user_dbuttons import user_main_dbuttons
 from keyboards.inline.user_ibuttons import user_main_ibuttons
-from loader import dp, db
+from loader import dp, db, bot
+
+
+@dp.message_handler(F.text == "/bekor", state="*")
+async def bekor_command(message: types.Message, state: FSMContext):
+    await state.finish()
+    await message.answer(text="Jarayon bekor qilindi!", reply_markup=user_main_dbuttons)
 
 
 @dp.message_handler(CommandStart(), state="*")
@@ -18,7 +27,7 @@ async def bot_start(message: types.Message, state: FSMContext):
             f"\n/ban - Ban"
             f"\n/unban - Bandan chiqarish"
             f"\n\nUshbu buyruqlar botni biror guruhga admin qilganingizda ishlaydi!")
-    text_ = ("Assalom aleykum!\n\nBu bot orqali siz guruhingizdagi ruxsatsiz jo'natilgan reklamalarni o'chiraman "
+    text_ = ("Bu bot orqali siz guruhingizdagi ruxsatsiz jo'natilgan reklamalarni o'chiraman "
              "(jpg, telefon) raqam, havola) shakldagilarni, hamda guruhga foydalanuvchi chiqgani va kirgani haqidagi "
              "xabarni o'chiraman. Mendan to'laqonli foydalanish uchun guruhingizga qo'shib keyin adminlik berishingiz "
              "kerak. Meni boshqa botlardan afzalligim reklamalar jo'natmayman.")
@@ -26,13 +35,11 @@ async def bot_start(message: types.Message, state: FSMContext):
     try:
         if message.get_args():
             await message.delete()
-        else:
-            await message.answer(text=text_, reply_markup=user_main_ibuttons())
+        await bot.send_message(chat_id=message.from_user.id,
+                               text="Assalomu alaykum!", reply_markup=user_main_dbuttons)
+
+        await message.answer(text=text_, reply_markup=user_main_ibuttons())
         await db.add_user(message.from_user.id)
-    except asyncpg.exceptions.UniqueViolationError:
-        pass
-    except MessageCantBeDeleted:
-        pass
-    except Exception:
-        pass
+    except Exception as err:
+        logging.info(err)
     await state.finish()

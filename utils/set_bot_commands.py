@@ -10,5 +10,6 @@ async def set_default_commands(dp):
             types.BotCommand("unro", "RO rejimdan chiqarish"),
             types.BotCommand("ban", "Ban"),
             types.BotCommand("unban", "Bandan chiqarish"),
+            types.BotCommand("/bekor", "Jarayonni bekor qilish")
         ]
     )
