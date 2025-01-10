@@ -41,11 +41,11 @@ async def groups_handler(message: types.Message):
     await message.answer(text=message.text, reply_markup=group_main_buttons)
 
 
-@dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
-async def groups_info_handler(message: types.Message):
-    await message.answer(
-        text="Kerakli guruh tugmasiga bosing", reply_markup=await view_groups_ibutton()
-    )
+# @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
+# async def groups_info_handler(message: types.Message):
+#     await message.answer(
+#         text="Kerakli guruh tugmasiga bosing", reply_markup=await view_groups_ibutton()
+#     )
 
 
 @dp.callback_query_handler(F.data.startswith("getgroup_"))
@@ -146,13 +146,13 @@ async def send_to_bot_users_handler(message: types.Message):
 
 @dp.message_handler(state=AdminStates.SEND_POST_TO_GROUPS, content_types=types.ContentTypes.ANY)
 async def send_to_bot_users_two(message: types.Message, state: FSMContext):
+    await state.finish()
     groups = await db.get_groups()
     success_count, failed_count = await send_to_groups(message, groups)
     await message.answer(
         f"Xabar {success_count} ta guruhga yuborildi!\n{failed_count} ta guruh botni block qilgan"
     )
     await db.update_send_status(False)
-    await state.finish()
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "🖇 Mediagroup habar yuborish")
@@ -168,6 +168,7 @@ async def send_media_to_groups_handler(message: types.Message):
 
 @dp.message_handler(state=AdminStates.SEND_MEDIA_TO_GROUPS, is_media_group=True, content_types=types.ContentTypes.ANY)
 async def send_media_to_groups_two(message: types.Message, album: List[types.Message], state: FSMContext):
+    await state.finish()
     try:
         media_group = await handle_media_group(album)
     except Exception as err:
@@ -180,4 +181,3 @@ async def send_media_to_groups_two(message: types.Message, album: List[types.Mes
         f"Media {success_count} ta guruhga yuborildi!\n{failed_count} ta guruh botni block qilgan"
     )
     await db.update_send_status(False)
-    await state.finish()

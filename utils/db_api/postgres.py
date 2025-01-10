@@ -121,12 +121,11 @@ class Database:
         return await self.execute(sql, users, group_id, execute=True)
 
     async def get_groups(self):
-        """ Guruhni ID siga ko'ra ajratib oluvchi funksiya """
-        sql = "SELECT group_id FROM groups"
+
+        sql = "SELECT * FROM groups"
         return await self.execute(sql, fetch=True)
 
     async def get_group(self, group_id):
-        """ Guruhni ID siga ko'ra ajratib oluvchi funksiya """
         sql = "SELECT * FROM groups WHERE group_id=$1"
         return await self.execute(sql, group_id, fetchrow=True)
 
