@@ -76,7 +76,7 @@ async def next_page_callback(call: types.CallbackQuery):
     else:
         await call.answer(cache_time=0)
 
-        print(extract[current_page])
+        # print(extract[current_page])
         # group_name = (await bot.get_chat(all_groups[current_page]['group_id'])).title
         # group_username = f"@{(await bot.get_chat(all_groups[current_page]['group_id'])).username}"
         # count_members = await bot.get_chat_member_count(all_groups[current_page]['group_id'])
