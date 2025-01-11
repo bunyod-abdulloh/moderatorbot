@@ -91,10 +91,10 @@ async def banned_member(message: types.Message):
         await db.delete_group(group_id=message.chat.id)
 
 
-@dp.message_handler(IsGroupPhoto(), content_types=types.ContentType.PHOTO, state="*")
+@dp.message_handler(IsGroupPhoto(), content_types=['photo', 'video'], state="*")
 async def delete_non_admin_photos(message: types.Message):
     if not await is_admin(bot, message.chat.id, message.from_user.id):
         await message.delete()
         await message.answer(
-            f"⚠️ {message.from_user.full_name}, faqat administratorlar rasm yuborishi mumkin!"
+            f"⚠️ {message.from_user.full_name}, faqat administratorlar media xabar yuborishi mumkin!"
         )

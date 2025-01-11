@@ -7,6 +7,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.utils.exceptions import BadRequest
 
 from filters import IsGroup, AdminFilter
+from filters.group_chat import is_admin
 from loader import dp, bot, db
 
 PHONE_REGEX = r"(?<!\d)(\+?\d{1,3}[\s.-]?)?(\(?\d{1,4}\)?[\s.-]?)?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}(?!\d)"
@@ -105,13 +106,12 @@ async def unban_user(message: types.Message):
 @dp.message_handler(IsGroup(), state="*", content_types="any", is_media_group=True)
 async def check_media_group(message: types.Message):
     try:
-        group = await db.get_group(group_id=message.chat.id)
-        if group and not (await bot.get_chat_member(chat_id=group, user_id=message.from_user.id)).status in ['creator',
-                                                                                                             'administrator',
-                                                                                                             'owner']:
-            if message.entities or message.caption_entities:
-                await message.delete()
-                await message.answer(f"{message.from_user.full_name}, iltimos, reklama tarqatmang!")
+        if not await is_admin(bot, message.chat.id, message.from_user.id):
+            group = await db.get_group(group_id=message.chat.id)
+            if group:
+                if message.entities or message.caption_entities:
+                    await message.delete()
+                    await message.answer(f"{message.from_user.full_name}, iltimos, reklama tarqatmang!")
     except Exception:
         pass
 
@@ -120,15 +120,13 @@ async def check_media_group(message: types.Message):
 @dp.message_handler(IsGroup(), state="*", content_types=['text', 'video', 'photo'])
 async def check_the_link(message: types.Message):
     try:
-        group = await db.get_group(group_id=message.chat.id)
-        if group and not (await bot.get_chat_member(chat_id=group, user_id=message.from_user.id)).status in ['creator',
-                                                                                                             'administrator',
-                                                                                                             'owner']:
-            if message.entities or message.caption_entities:
-                await message.delete()
-                await message.answer(f"{message.from_user.full_name}, iltimos, reklama tarqatmang!")
+        if not await is_admin(bot, message.chat.id, message.from_user.id):
+            group = await db.get_group(group_id=message.chat.id)
 
-            # if re.search(PHONE_REGEX, message.text):
-            #     await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
+            if group:
+                if message.entities or message.caption_entities:
+                    await message.delete()
+                    await message.answer(f"{message.from_user.full_name}, iltimos, reklama tarqatmang!")
+
     except Exception:
         pass
