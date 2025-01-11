@@ -8,8 +8,10 @@ from aiogram.dispatcher.filters import Command
 from aiogram.utils.exceptions import BadRequest
 
 from data.config import ADMINS
-from filters import IsGroup, AdminFilter
+from filters import IsGroup, AdminFilter, IsGroupAdminOrOwner
 from loader import dp, bot, db
+
+PHONE_REGEX = r"\+?[1-9]\d{1,14}"  # Raqamlar xalqaro formatda (masalan, +1234567890)
 
 
 # Read-only mode handler
@@ -115,5 +117,21 @@ async def check_the_link(message: types.Message):
             if message.entities or message.caption_entities:
                 await message.delete()
                 await message.answer(f"{message.from_user.full_name}, iltimos, reklama tarqatmang!")
+
+            if re.search(PHONE_REGEX, message.text):
+                await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
     except Exception:
         pass
+
+
+@dp.message_handler(IsGroup(), regexp=PHONE_REGEX)
+async def get_phone_numbers(message: types.Message):
+    print("salom")
+    admin_or_owner = ['administrator', 'creator']
+    status = (await bot.get_chat_member(message.chat.id, message.from_user.id)).status
+
+    if status in admin_or_owner:
+        pass
+    else:
+        await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
+        await message.delete()
