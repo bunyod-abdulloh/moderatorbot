@@ -11,6 +11,7 @@ from keyboards.default.admin_buttons import group_main_buttons
 from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button
 from loader import dp, bot, db
 from states.admin import AdminStates
+from utils.user_functions import extracter
 
 WARNING_TEXT = (
     "Habar yuborishdan oldin postingizni yaxshilab tekshirib oling!\n\n"
@@ -41,11 +42,94 @@ async def groups_handler(message: types.Message):
     await message.answer(text=message.text, reply_markup=group_main_buttons)
 
 
-# @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
-# async def groups_info_handler(message: types.Message):
-#     await message.answer(
-#         text="Kerakli guruh tugmasiga bosing", reply_markup=await view_groups_ibutton()
-#     )
+@dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
+async def groups_info_handler(message: types.Message):
+    all_groups = await db.get_groups()
+    if not all_groups:
+        await message.answer("Guruhlar mavjud emas!")
+    else:
+        extract = extracter(all_datas=all_groups, delimiter=10)
+        await message.answer(
+            text="Kerakli guruh tugmasiga bosing", reply_markup=await view_groups_ibutton(
+                all_groups=all_groups[:10], current_page=1, all_pages=len(extract)
+            )
+        )
+
+
+@dp.callback_query_handler(F.data.startswith("alert_"))
+async def alert_callback(call: types.CallbackQuery):
+    current_page = call.data.split('_')[1]
+    await call.answer(
+        text=f"Siz {current_page} - sahifadasiz!", show_alert=True
+    )
+
+
+@dp.callback_query_handler(F.data.startswith("next_"))
+async def next_page_callback(call: types.CallbackQuery):
+    current_page = int(call.data.split('_')[1])
+    all_groups = await db.get_groups()
+
+    if current_page == len(all_groups):
+        await call.answer(
+            text="Boshqa sahifa mavjud emas!", show_alert=True
+        )
+    else:
+        await call.answer(cache_time=0)
+        extract = extracter(all_datas=all_groups, delimiter=10)
+        print(extract)
+        # group_name = (await bot.get_chat(all_groups[current_page]['group_id'])).title
+        # group_username = f"@{(await bot.get_chat(all_groups[current_page]['group_id'])).username}"
+        # count_members = await bot.get_chat_member_count(all_groups[current_page]['group_id'])
+        # user_first_name = (await bot.get_chat(all_groups[current_page]['telegram_id'])).first_name
+        # user_username = f"@{(await bot.get_chat(all_groups[current_page]['telegram_id'])).username}"
+        # user_status = (
+        #     await bot.get_chat_member(all_groups[current_page]['group_id'],
+        #                               all_groups[current_page]['telegram_id'])).status
+        #
+        # await call.message.edit_text(
+        #     text=f"Guruh nomi: {group_name}\n"
+        #          f"Username: {group_username}\n"
+        #          f"Foydanaluvchilar soni: {count_members}\n"
+        #          f"Mas'ul: {user_first_name}\n"
+        #          f"Username: {user_username}\n"
+        #          f"Status: {user_status.capitalize()}",
+        #     reply_markup=button_generator(
+        #         current_page=current_page + 1, all_pages=len(all_groups)
+        #     )
+        # )
+
+
+@dp.callback_query_handler(F.data.startswith("prev_"))
+async def prev_page_callback(call: types.CallbackQuery):
+    current_page = int(call.data.split('_')[1])
+    if current_page == 1:
+        await call.answer(
+            text="Boshqa sahifa mavjud emas!", show_alert=True
+        )
+    else:
+        await call.answer(cache_time=0)
+        current_page = current_page - 1
+        all_groups = await db.get_groups()
+        group_name = (await bot.get_chat(all_groups[current_page]['group_id'])).title
+        group_username = f"@{(await bot.get_chat(all_groups[current_page]['group_id'])).username}"
+        count_members = await bot.get_chat_member_count(all_groups[current_page]['group_id'])
+        user_first_name = (await bot.get_chat(all_groups[current_page]['telegram_id'])).first_name
+        user_username = f"@{(await bot.get_chat(all_groups[current_page]['telegram_id'])).username}"
+        user_status = (
+            await bot.get_chat_member(all_groups[current_page]['group_id'],
+                                      all_groups[current_page]['telegram_id'])).status
+
+        await call.message.edit_text(
+            text=f"Guruh nomi: {group_name}\n"
+                 f"Username: {group_username}\n"
+                 f"Foydanaluvchilar soni: {count_members}\n"
+                 f"Mas'ul: {user_first_name}\n"
+                 f"Username: {user_username}\n"
+                 f"Status: {user_status.capitalize()}",
+            reply_markup=button_generator(
+                current_page=current_page, all_pages=len(all_groups)
+            )
+        )
 
 
 @dp.callback_query_handler(F.data.startswith("getgroup_"))
