@@ -1,17 +1,27 @@
 import asyncio
 import datetime
 import re
-from typing import List
 
 from aiogram import types
 from aiogram.dispatcher.filters import Command
 from aiogram.utils.exceptions import BadRequest
 
-from data.config import ADMINS
-from filters import IsGroup, AdminFilter, IsGroupAdminOrOwner
+from filters import IsGroup, AdminFilter
 from loader import dp, bot, db
 
-PHONE_REGEX = r"\+?[1-9]\d{1,14}"  # Raqamlar xalqaro formatda (masalan, +1234567890)
+PHONE_REGEX = r"(?<!\d)(\+?\d{1,3}[\s.-]?)?(\(?\d{1,4}\)?[\s.-]?)?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}(?!\d)"
+
+
+@dp.message_handler(IsGroup(), regexp=PHONE_REGEX)
+async def get_phone_numbers(message: types.Message):
+    admin_or_owner = ['administrator', 'creator']
+    status = (await bot.get_chat_member(message.chat.id, message.from_user.id)).status
+
+    if status in admin_or_owner:
+        pass
+    else:
+        await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
+        await message.delete()
 
 
 # Read-only mode handler
@@ -107,7 +117,7 @@ async def check_media_group(message: types.Message):
 
 
 # Check links in messages
-@dp.message_handler(IsGroup(), state="*", content_types="any")
+@dp.message_handler(IsGroup(), state="*", content_types=['text', 'video', 'photo'])
 async def check_the_link(message: types.Message):
     try:
         group = await db.get_group(group_id=message.chat.id)
@@ -118,20 +128,7 @@ async def check_the_link(message: types.Message):
                 await message.delete()
                 await message.answer(f"{message.from_user.full_name}, iltimos, reklama tarqatmang!")
 
-            if re.search(PHONE_REGEX, message.text):
-                await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
+            # if re.search(PHONE_REGEX, message.text):
+            #     await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
     except Exception:
         pass
-
-
-@dp.message_handler(IsGroup(), regexp=PHONE_REGEX)
-async def get_phone_numbers(message: types.Message):
-    print("salom")
-    admin_or_owner = ['administrator', 'creator']
-    status = (await bot.get_chat_member(message.chat.id, message.from_user.id)).status
-
-    if status in admin_or_owner:
-        pass
-    else:
-        await message.reply("Iltimos, telefon raqamlarini xabarda yubormang!")
-        await message.delete()

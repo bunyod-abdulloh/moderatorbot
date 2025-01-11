@@ -8,7 +8,7 @@ from magic_filter import F
 
 from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import group_main_buttons
-from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button
+from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button, button_generator
 from loader import dp, bot, db
 from states.admin import AdminStates
 from utils.user_functions import extracter
@@ -68,15 +68,15 @@ async def alert_callback(call: types.CallbackQuery):
 async def next_page_callback(call: types.CallbackQuery):
     current_page = int(call.data.split('_')[1])
     all_groups = await db.get_groups()
-
-    if current_page == len(all_groups):
+    extract = extracter(all_datas=all_groups, delimiter=10)
+    if current_page == len(extract):
         await call.answer(
             text="Boshqa sahifa mavjud emas!", show_alert=True
         )
     else:
         await call.answer(cache_time=0)
-        extract = extracter(all_datas=all_groups, delimiter=10)
-        print(extract)
+
+        print(extract[current_page])
         # group_name = (await bot.get_chat(all_groups[current_page]['group_id'])).title
         # group_username = f"@{(await bot.get_chat(all_groups[current_page]['group_id'])).username}"
         # count_members = await bot.get_chat_member_count(all_groups[current_page]['group_id'])
@@ -126,8 +126,8 @@ async def prev_page_callback(call: types.CallbackQuery):
                  f"Mas'ul: {user_first_name}\n"
                  f"Username: {user_username}\n"
                  f"Status: {user_status.capitalize()}",
-            reply_markup=button_generator(
-                current_page=current_page, all_pages=len(all_groups)
+            reply_markup=await view_groups_ibutton(
+                all_groups=None, current_page=current_page, all_pages=len(all_groups)
             )
         )
 

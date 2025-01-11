@@ -50,8 +50,9 @@ class Database:
             """,
             """
             CREATE TABLE IF NOT EXISTS groups (
+                id SERIAL PRIMARY KEY,
                 telegram_id BIGINT NULL,
-                group_id BIGINT NOT NULL UNIQUE,
+                group_id BIGINT NOT NULL,
                 users INTEGER DEFAULT 0                
             );
             """,
@@ -109,7 +110,7 @@ class Database:
     # =========================== TABLE | GROUPS ===========================
     async def add_group(self, telegram_id, group_id):
         """ Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya """
-        sql = " INSERT INTO groups(telegram_id, group_id) VALUES($1, $2) ON CONFLICT(group_id) DO NOTHING"
+        sql = " INSERT INTO groups(telegram_id, group_id) VALUES($1, $2)"
         group = await self.execute(sql, telegram_id, group_id, fetchrow=True)
         if not group:
             sql_select = "SELECT * FROM groups WHERE group_id=$1"
