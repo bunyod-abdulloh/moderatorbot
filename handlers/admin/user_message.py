@@ -23,7 +23,7 @@ async def send_message_to_user_handler(message: types.Message, state: FSMContext
         data = await state.get_data()
         await bot.send_message(
             chat_id=data['user_id'],
-            text=message.text
+            text=f"Savolingizga bot admining javobi:\n\n{message.text}"
         )
         await message.answer("Javobingiz yuborildi!")
         await state.finish()
