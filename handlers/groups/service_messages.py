@@ -95,6 +95,6 @@ async def banned_member(message: types.Message):
 async def delete_non_admin_photos(message: types.Message):
     if not await is_admin(bot, message.chat.id, message.from_user.id):
         await message.delete()
-        await message.answer(
-            f"⚠️ {message.from_user.full_name}, faqat administratorlar media xabar yuborishi mumkin!"
-        )
+        # await message.answer(
+        #     f"⚠️ {message.from_user.full_name}, faqat administratorlar media xabar yuborishi mumkin!"
+        # )

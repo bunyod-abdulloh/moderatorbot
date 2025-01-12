@@ -34,13 +34,20 @@ class IsGroupAdminOrOwner(BoundFilter):
         return member.status in [types.ChatMemberStatus.ADMINISTRATOR, types.ChatMemberStatus.CREATOR]
 
 
-# Faqat yangi a'zolarni tekshirish uchun filter
-class IsNewChatMember(BoundFilter):
-    async def check(self, update: types.ChatMemberUpdated) -> bool:
-        # Eski status LEFT yoki KICKED va yangi status MEMBER yoki RESTRICTED bo'lsa
-        return (
-                update.old_chat_member.status in [types.ChatMemberStatus.LEFT, types.ChatMemberStatus.KICKED]
-                and update.new_chat_member.status in [types.ChatMemberStatus.MEMBER, types.ChatMemberStatus.RESTRICTED]
+class IsGroupAndBotAdmin(BoundFilter):
+    async def check(self, message: types.Message) -> bool:
+        if message.chat.type not in (
+                types.ChatType.GROUP,
+                types.ChatType.SUPERGROUP,
+        ):
+            return False
+
+        # Botning admin ekanligini tekshirish
+        bot = message.bot
+        chat_member = await bot.get_chat_member(message.chat.id, bot.id)
+        return chat_member.status in (
+            types.ChatMemberStatus.ADMINISTRATOR,
+            types.ChatMemberStatus.OWNER,
         )
 
 
