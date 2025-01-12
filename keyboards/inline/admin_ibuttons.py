@@ -25,9 +25,9 @@ async def view_groups_ibutton(all_groups, current_page, all_pages):
 
 def group_button(group_id):
     markup = InlineKeyboardMarkup(row_width=1)
-    markup.add(InlineKeyboardButton(text="Oddiy xabar yuborish", callback_data=f"send_post_to_group:{group_id}"))
+    markup.add(InlineKeyboardButton(text="Oddiy xabar yuborish", callback_data=f"post_to_group:{group_id}"))
     markup.add(
-        InlineKeyboardButton(text="Mediagroup xabar yuborish", callback_data=f"send_media_to_group:{group_id}"))
+        InlineKeyboardButton(text="Mediagroup xabar yuborish", callback_data=f"media_to_group:{group_id}"))
     markup.add(InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_groups"))
     return markup
 

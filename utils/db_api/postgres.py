@@ -49,8 +49,7 @@ class Database:
             );
             """,
             """
-            CREATE TABLE IF NOT EXISTS groups (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS groups (                
                 telegram_id BIGINT NULL,
                 group_id BIGINT NOT NULL,
                 users INTEGER DEFAULT 0                

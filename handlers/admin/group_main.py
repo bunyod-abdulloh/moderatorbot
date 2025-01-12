@@ -1,10 +1,9 @@
-import asyncio
-
 from typing import List
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.utils.exceptions import BotKicked
 from magic_filter import F
+
 from loader import dp, bot, db
 from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import group_main_buttons
@@ -12,7 +11,6 @@ from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button
 from states.admin import AdminStates
 from utils.user_functions import extracter
 
-# Yordamchi matnlar
 WARNING_TEXT = (
     "Habar yuborishdan oldin postingizni yaxshilab tekshirib oling!\n\n"
     "Imkoni bo'lsa postingizni oldin tayyorlab olib keyin yuboring.\n\n"
@@ -21,9 +19,6 @@ WARNING_TEXT = (
 
 
 async def get_group_info(group_id):
-    """
-    Guruh haqida ma'lumotlarni olish.
-    """
     chat = await bot.get_chat(chat_id=group_id)
     return {
         "name": chat.full_name,
@@ -33,9 +28,6 @@ async def get_group_info(group_id):
 
 
 async def handle_media_group(album: List[types.Message]) -> types.MediaGroup:
-    """
-    Media-guruhni qayta ishlash.
-    """
     media_group = types.MediaGroup()
     for obj in album:
         file_id = obj.photo[-1].file_id if obj.photo else obj[obj.content_type].file_id
@@ -45,47 +37,25 @@ async def handle_media_group(album: List[types.Message]) -> types.MediaGroup:
 
 async def paginate_groups(call: types.CallbackQuery, current_page: int, next_page=False, prev_page=False):
     all_groups = await db.get_groups()
-
     extract = extracter(all_datas=all_groups, delimiter=10)
+    total_pages = len(extract)
+
     if next_page:
-        current_page = current_page + 1 if current_page < len(extract) else 1
-    if prev_page:
-        current_page = current_page - 1 if current_page > 1 else len(extract)
+        current_page = current_page + 1 if current_page < total_pages else 1
+    elif prev_page:
+        current_page = current_page - 1 if current_page > 1 else total_pages
+
     groups_on_page = extract[current_page - 1]
 
     markup = await view_groups_ibutton(
-        all_groups=groups_on_page, current_page=current_page, all_pages=len(extract)
+        all_groups=groups_on_page, current_page=current_page, all_pages=total_pages
     )
-    await call.message.edit_text(
-        text="Kerakli guruh tugmasiga bosing", reply_markup=markup
-    )
+    await call.message.edit_text("Kerakli guruh tugmasiga bosing", reply_markup=markup)
 
 
-async def send_to_groups(message: types.Message, groups: List[dict], media_group=None):
-    """
-    Guruhlarga xabar yoki media-guruh yuborish.
-    """
-    success_count, failed_count = 0, 0
-    for group in groups:
-        try:
-            if media_group:
-                await bot.send_media_group(chat_id=group['group_id'], media=media_group)
-            else:
-                await message.copy_to(chat_id=group['group_id'])
-            success_count += 1
-        except BotKicked:
-            failed_count += 1
-            await db.delete_group(group['group_id'])
-        if success_count % 1500 == 0:
-            await asyncio.sleep(30)
-        await asyncio.sleep(0.05)
-    return success_count, failed_count
-
-
-# Handlerlar
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar")
 async def groups_handler(message: types.Message):
-    await message.answer(text=message.text, reply_markup=group_main_buttons)
+    await message.answer(message.text, reply_markup=group_main_buttons)
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
@@ -96,10 +66,8 @@ async def groups_info_handler(message: types.Message):
     else:
         extract = extracter(all_datas=all_groups, delimiter=10)
         await message.answer(
-            text="Kerakli guruh tugmasiga bosing",
-            reply_markup=await view_groups_ibutton(
-                all_groups=extract[0], current_page=1, all_pages=len(extract)
-            )
+            "Kerakli guruh tugmasiga bosing",
+            reply_markup=await view_groups_ibutton(all_groups=extract[0], current_page=1, all_pages=len(extract))
         )
 
 
@@ -109,13 +77,10 @@ async def navigation_callback(call: types.CallbackQuery):
     current_page = int(current_page)
 
     if action == "alert":
-        await call.answer(text=f"Siz {current_page} - sahifadasiz!", show_alert=True)
-    elif action == "next":
+        await call.answer(f"Siz {current_page} - sahifadasiz!", show_alert=True)
+    else:
         await call.answer(cache_time=0)
-        await paginate_groups(call=call, current_page=current_page, next_page=True)
-    elif action == "prev":
-        await call.answer(cache_time=0)
-        await paginate_groups(call=call, current_page=current_page, prev_page=True)
+        await paginate_groups(call, current_page, next_page=(action == "next"), prev_page=(action == "prev"))
 
 
 @dp.callback_query_handler(F.data.startswith("getgroup_"))
@@ -126,8 +91,8 @@ async def get_groups_handler(call: types.CallbackQuery):
     user = await bot.get_chat_member(group_id, get_group_on_db['telegram_id'])
 
     await call.message.edit_text(
-        text=(
-            f"Guruh ma'lumotlari:\n\n"
+        (
+            f"Guruh ma'lumotlari\n\n"
             f"Guruh nomi: {group_info['name']}\n"
             f"Guruh username: @{group_info['username']}\n"
             f"Foydalanuvchilar soni: {group_info['member_count']}\n"
@@ -139,12 +104,13 @@ async def get_groups_handler(call: types.CallbackQuery):
     )
 
 
-@dp.callback_query_handler(F.data.startswith("send_post_to_group:"))
+@dp.callback_query_handler(F.data.startswith(("post_to_group:", "media_to_group:")))
 async def send_to_group_handler(call: types.CallbackQuery, state: FSMContext):
-    group_id = call.data.split(":")[1]
+    action, group_id = call.data.split(":")
     await state.update_data(group_id=group_id)
-    await call.message.edit_text(text=WARNING_TEXT)
-    await AdminStates.SEND_POST_TO_GROUP.set()
+    await call.message.edit_text(WARNING_TEXT)
+
+    await (AdminStates.SEND_POST_TO_GROUP if action == "post_to_group" else AdminStates.SEND_MEDIA_TO_GROUP).set()
 
 
 @dp.message_handler(state=AdminStates.SEND_POST_TO_GROUP, content_types=types.ContentTypes.ANY)
@@ -154,9 +120,26 @@ async def send_to_group_message(message: types.Message, state: FSMContext):
     try:
         await message.copy_to(chat_id=group_id)
         group_name = (await bot.get_chat(chat_id=group_id)).full_name
-        await message.answer(f"{group_name} ga habar yuborildi!")
+        await message.answer(f"Xabar {group_name} ga yuborildi!")
     except BotKicked:
         await db.delete_group(group_id)
+    except Exception:
+        pass
+    await state.finish()
+
+
+@dp.message_handler(state=AdminStates.SEND_MEDIA_TO_GROUP, content_types=types.ContentTypes.ANY, is_media_group=True)
+async def send_to_group_media(message: types.Message, album: List[types.Message], state: FSMContext):
+    media_group = await handle_media_group(album)
+    data = await state.get_data()
+    try:
+        await bot.send_media_group(data['group_id'], media_group)
+        group_name = (await bot.get_chat(chat_id=data['group_id'])).full_name
+        await message.answer(f"Xabar {group_name} ga yuborildi!")
+    except BotKicked:
+        await db.delete_group(data['group_id'])
+    except Exception:
+        pass
     await state.finish()
 
 
@@ -164,10 +147,8 @@ async def send_to_group_message(message: types.Message, state: FSMContext):
 async def back_to_group_callback(call: types.CallbackQuery):
     await call.answer(cache_time=0)
     all_groups = await db.get_groups()
-
     extract = extracter(all_datas=all_groups, delimiter=10)
     await call.message.edit_text(
-        text="Kerakli guruh tugmasiga bosing", reply_markup=await view_groups_ibutton(
-            all_groups=extract[0], current_page=1, all_pages=len(extract)
-        )
+        "Kerakli guruh tugmasiga bosing",
+        reply_markup=await view_groups_ibutton(all_groups=extract[0], current_page=1, all_pages=len(extract))
     )
