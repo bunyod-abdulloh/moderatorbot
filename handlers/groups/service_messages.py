@@ -2,7 +2,7 @@ import logging
 from aiogram import types
 from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked
 from data.config import ADMINS, BOT_ID
-from filters.group_chat import IsGroup, IsGroupPhoto, is_admin, IsGroupAdminOrOwner
+from filters.group_chat import IsGroup, IsGroupAdminOrOwner
 from loader import dp, bot, db
 
 
@@ -89,12 +89,3 @@ async def banned_member(message: types.Message):
             text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
         )
         await db.delete_group(group_id=message.chat.id)
-
-
-@dp.message_handler(IsGroupPhoto(), content_types=['photo', 'video'], state="*")
-async def delete_non_admin_photos(message: types.Message):
-    if not await is_admin(bot, message.chat.id, message.from_user.id):
-        await message.delete()
-        # await message.answer(
-        #     f"⚠️ {message.from_user.full_name}, faqat administratorlar media xabar yuborishi mumkin!"
-        # )

@@ -28,6 +28,7 @@ def group_button(group_id):
     markup.add(InlineKeyboardButton(text="Oddiy xabar yuborish", callback_data=f"send_post_to_group:{group_id}"))
     markup.add(
         InlineKeyboardButton(text="Mediagroup xabar yuborish", callback_data=f"send_media_to_group:{group_id}"))
+    markup.add(InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_groups"))
     return markup
 
 
