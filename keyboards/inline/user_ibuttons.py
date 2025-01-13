@@ -48,13 +48,35 @@ def send_message_to_admin(user_id):
     return markup
 
 
+async def restrict_groups_ibutton(all_groups, current_page, all_pages):
+    markup = InlineKeyboardMarkup(row_width=3)
+
+    for group in all_groups:
+        group_name = (await bot.get_chat(chat_id=group['group_id'])).full_name
+
+        markup.add(InlineKeyboardButton(text=group_name, callback_data=f"userrestrict:{group['group_id']}"))
+    markup.add(
+        InlineKeyboardButton(
+            text="◀️",
+            callback_data=f"prev-restrict:{current_page}"
+        ))
+    markup.insert(InlineKeyboardButton(
+        text=f"{current_page}/{all_pages}",
+        callback_data=f"alert-restrict:{current_page}"
+    ))
+    markup.insert(InlineKeyboardButton(
+        text="▶️",
+        callback_data=f"next-restrict:{current_page}"))
+    return markup
+
+
 def restrict_messages_ibuttons(group_id):
     markup = InlineKeyboardMarkup(row_width=3)
 
     for text, callback in text_callback.items():
         markup.insert(
             InlineKeyboardButton(text=text, callback_data=text_callback_data.new(type=callback, group_id=group_id)))
-    markup.add(InlineKeyboardButton(text="⬅️ Ortga", callback_data="back_user"))
+    markup.add(InlineKeyboardButton(text="⬅️ Ortga", callback_data="back_restrict"))
     return markup
 
 

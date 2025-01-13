@@ -5,9 +5,11 @@ from loader import bot
 
 async def view_groups_ibutton(all_groups, current_page, all_pages):
     markup = InlineKeyboardMarkup(row_width=3)
+
     for group in all_groups:
         group_name = (await bot.get_chat(chat_id=group['group_id'])).full_name
         markup.add(InlineKeyboardButton(text=group_name, callback_data=f"getgroup_{group['group_id']}"))
+
     markup.add(
         InlineKeyboardButton(
             text="◀️",
