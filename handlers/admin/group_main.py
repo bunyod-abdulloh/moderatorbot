@@ -36,21 +36,24 @@ async def handle_media_group(album: List[types.Message]) -> types.MediaGroup:
 
 
 async def paginate_groups(call: types.CallbackQuery, current_page: int, next_page=False, prev_page=False):
-    all_groups = await db.get_groups()
-    extract = extracter(all_datas=all_groups, delimiter=10)
-    total_pages = len(extract)
+    try:
+        all_groups = await db.get_groups()
+        extract = extracter(all_datas=all_groups, delimiter=10)
+        total_pages = len(extract)
 
-    if next_page:
-        current_page = current_page + 1 if current_page < total_pages else 1
-    elif prev_page:
-        current_page = current_page - 1 if current_page > 1 else total_pages
+        if next_page:
+            current_page = current_page + 1 if current_page < total_pages else 1
+        elif prev_page:
+            current_page = current_page - 1 if current_page > 1 else total_pages
 
-    groups_on_page = extract[current_page - 1]
+        groups_on_page = extract[current_page - 1]
 
-    markup = await view_groups_ibutton(
-        all_groups=groups_on_page, current_page=current_page, all_pages=total_pages
-    )
-    await call.message.edit_text("Kerakli guruh tugmasiga bosing", reply_markup=markup)
+        markup = await view_groups_ibutton(
+            all_groups=groups_on_page, current_page=current_page, all_pages=total_pages
+        )
+        await call.message.edit_text("Kerakli guruh tugmasiga bosing", reply_markup=markup)
+    except Exception:
+        pass
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar")

@@ -1,6 +1,6 @@
 import logging
 from aiogram import types
-from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked
+from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked, BadRequest
 from data.config import ADMINS, BOT_ID
 from filters.group_chat import IsGroup, IsGroupAdminOrOwner
 from loader import dp, bot, db
@@ -39,6 +39,8 @@ async def new_member_admin(message: types.Message):
 
     except MessageCantBeDeleted:
         await alert_message(alert_text="guruhga qo'shilganligi", message=message)
+    except Exception as err:
+        logging.error(err)
 
 
 @dp.message_handler(IsGroup(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
@@ -83,9 +85,11 @@ async def banned_member(message: types.Message):
         await message.delete()
     except MessageCantBeDeleted:
         await alert_message(alert_text="guruhdan chiqqanligi", message=message)
-    except BotKicked:
+    except BotKicked or BadRequest:
         await bot.send_message(
             chat_id=ADMINS[0],
             text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
         )
         await db.delete_group(group_id=message.chat.id)
+    except Exception as err:
+        logging.error(err)
