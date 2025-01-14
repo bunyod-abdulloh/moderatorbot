@@ -103,8 +103,8 @@ async def navigation_callback_restrict(call: types.CallbackQuery):
     else:
         await call.answer(cache_time=0)
         try:
-            all_groups = await db.get_groups()
-            extract = extracter(all_datas=all_groups, delimiter=10)
+            user_groups = await db.get_group_by_user(telegram_id=message.from_user.id)
+            extract = extracter(all_datas=user_groups, delimiter=10)
             total_pages = len(extract)
 
             if action == "next-restrict":
