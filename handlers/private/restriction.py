@@ -22,6 +22,8 @@ async def restrict_messages_main(message: types.Message):
             "o'chirishingiz mumkin\n\nKerakli guruh tugmasiga bosing",
             reply_markup=await restrict_groups_ibutton(all_groups=extract[0], current_page=1, all_pages=len(extract))
         )
+    else:
+        await message.answer("Siz botni admin qilgan guruhlar mavjud emas!")
 
 
 @dp.callback_query_handler(F.data.startswith("userrestrict:"))
