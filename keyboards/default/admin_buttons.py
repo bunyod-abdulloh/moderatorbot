@@ -1,17 +1,39 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-admin_main_buttons = ReplyKeyboardMarkup(resize_keyboard=True)
-admin_main_buttons.row("Bot", "Guruhlar")
-admin_main_buttons.row(KeyboardButton("Bosh sahifa"))
 
-bot_main_buttons = ReplyKeyboardMarkup(resize_keyboard=True)
-bot_main_buttons.row("Foydalanuvchilar soni")
-bot_main_buttons.row("✅ Oddiy post yuborish")
-bot_main_buttons.row("🎞 Mediagroup post yuborish")
-bot_main_buttons.row("🔙 Ortga")
+def create_keyboard(buttons, row_width=1, resize=True):
+    """
+    Tugmalarni generatsiya qilish uchun funksiya.
 
-group_main_buttons = ReplyKeyboardMarkup(resize_keyboard=True)
-group_main_buttons.row("Guruhlar haqida")
-group_main_buttons.row("🧑‍💻 Oddiy habar yuborish")
-group_main_buttons.row("🖇 Mediagroup habar yuborish")
-group_main_buttons.row("🔙 Ortga")
+    :param buttons: Tugmalar matnining ro'yxati
+    :param row_width: Qator bo'yicha tugmalar soni
+    :param resize: Klaviaturani o'lchamini o'zgartirish
+    :return: ReplyKeyboardMarkup obyekt
+    """
+    markup = ReplyKeyboardMarkup(resize_keyboard=resize, row_width=row_width)
+    for row in buttons:
+        markup.row(*[KeyboardButton(text) for text in row])
+    return markup
+
+
+# Admin asosiy tugmalari
+admin_main_buttons = create_keyboard([
+    ["Bot", "Guruhlar"],
+    ["Bosh sahifa"]
+])
+
+# Bot bo'limi tugmalari
+bot_main_buttons = create_keyboard([
+    ["Foydalanuvchilar soni"],
+    ["✅ Oddiy post yuborish"],
+    ["🎞 Mediagroup post yuborish"],
+    ["🔙 Ortga"]
+])
+
+# Guruh bo'limi tugmalari
+group_main_buttons = create_keyboard([
+    ["Guruhlar haqida"],
+    ["🧑‍💻 Oddiy habar yuborish"],
+    ["🖇 Mediagroup habar yuborish"],
+    ["🔙 Ortga"]
+])

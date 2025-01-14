@@ -1,6 +1,8 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from keyboards.default.admin_buttons import create_keyboard
 
-user_main_dbuttons = ReplyKeyboardMarkup(resize_keyboard=True)
-user_main_dbuttons.row("➕ Guruhda odam ko'paytirish")
-user_main_dbuttons.row("✍️ Guruhda xabarlarni cheklash")
-user_main_dbuttons.row("📱 Admin bilan aloqa")
+# Foydalanuvchi asosiy tugmalari
+user_main_dbuttons = create_keyboard([
+    ["➕ Guruhda odam ko'paytirish"],
+    ["✍️ Guruhda xabarlarni cheklash"],
+    ["📱 Admin bilan aloqa"]
+])

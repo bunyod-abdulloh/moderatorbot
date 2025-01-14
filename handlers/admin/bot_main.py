@@ -28,7 +28,7 @@ async def user_count(message: types.Message):
 async def send_to_bot_users(message: types.Message):
     send_status = await db.get_send_status()
     if send_status is True:
-        await message.answer("Xabar yuborish jarayini yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")
+        await message.answer("Xabar yuborish jarayoni yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")
     else:
         await message.answer(text=WARNING_TEXT)
         await AdminStates.SEND_TO_USERS.set()
@@ -46,7 +46,7 @@ async def send_to_bot_users_two(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "🎞 Mediagroup post yuborish")
-async def send_media_to_bot(message: types.Message, state: FSMContext):
+async def send_media_to_bot(message: types.Message):
     send_status = await db.get_send_status()
     if send_status is True:
         await message.answer("Xabar yuborish jaroyini yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")

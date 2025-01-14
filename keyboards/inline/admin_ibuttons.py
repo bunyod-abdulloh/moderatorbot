@@ -32,25 +32,3 @@ def group_button(group_id):
         InlineKeyboardButton(text="Mediagroup xabar yuborish", callback_data=f"media_to_group:{group_id}"))
     markup.add(InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_groups"))
     return markup
-
-
-def button_generator(current_page: int, all_pages: int):
-    key = InlineKeyboardMarkup(
-        row_width=3
-    )
-    key.add(
-        InlineKeyboardButton(
-            text="◀️",
-            callback_data=f"prev_{current_page}"
-        ))
-    key.insert(InlineKeyboardButton(
-        text=f"{current_page}/{all_pages}",
-        callback_data=f"alert_{current_page}"
-    ))
-    key.insert(InlineKeyboardButton(
-        text="▶️",
-        callback_data=f"next_{current_page}"
-    )
-
-    )
-    return key
