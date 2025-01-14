@@ -43,3 +43,8 @@ async def bot_start(message: types.Message, state: FSMContext):
     except Exception:
         pass
     await state.finish()
+
+
+@dp.message_handler(F.text == "Bosh sahifa")
+async def user_main_page(message: types.Message, state: FSMContext):
+    await bot_start(message, state)
