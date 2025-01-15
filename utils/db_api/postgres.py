@@ -52,7 +52,9 @@ class Database:
             CREATE TABLE IF NOT EXISTS groups (                
                 telegram_id BIGINT NULL,
                 group_id BIGINT NOT NULL,
-                users INTEGER DEFAULT 0                
+                users INTEGER DEFAULT 0,
+                created_at DATE DEFAULT CURRENT_DATE,
+                status BOOLEAN DEFAULT TRUE
             );
             """,
             """
@@ -120,14 +122,20 @@ class Database:
         sql = "UPDATE groups SET users = $1 WHERE group_id = $2"
         return await self.execute(sql, users, group_id, execute=True)
 
-    async def get_groups(self):
+    async def update_group_status(self, status, group_id):
+        sql = "UPDATE groups SET status = $1 WHERE group_id = $2"
+        return await self.execute(sql, status, group_id, execute=True)
 
+    async def get_groups(self):
         sql = "SELECT * FROM groups"
         return await self.execute(sql, fetch=True)
 
-    async def get_group(self, group_id):
+    async def get_group(self, group_id, status=False):
         sql = "SELECT * FROM groups WHERE group_id=$1"
-        return await self.execute(sql, group_id, fetchrow=True)
+        if status:
+            return await self.execute(sql, group_id, fetchrow=True)
+        else:
+            return await self.execute(sql, group_id, fetch=True)
 
     async def get_group_by_user(self, telegram_id):
         sql = "SELECT * FROM groups WHERE telegram_id=$1"

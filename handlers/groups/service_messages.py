@@ -21,9 +21,20 @@ def get_restrict_permissions(can_send: bool):
     )
 
 
+async def check_bot_status(message: types.Message):
+    bot_ = await db.get_group(message.chat.id, True)
+
+    if bot_ and not bot_['status']:
+        await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
+        return False
+    return True
+
+
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
+        if not await check_bot_status(message):
+            return
         member_names = [member.first_name for member in message.new_chat_members]
 
         for member in message.new_chat_members:
@@ -39,6 +50,7 @@ async def new_member_admin(message: types.Message):
 
     except MessageCantBeDeleted:
         await alert_message(alert_text="guruhga qo'shilganligi", message=message)
+
     except Exception as err:
         logging.error(err)
 
