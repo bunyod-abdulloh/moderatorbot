@@ -165,6 +165,11 @@ async def today_referrals_count(message: types.Message):
     """
     Handler to display the count of today's referrals.
     """
+    referrals = await db.get_all_referrals()
+    if not referrals:
+        await message.answer("Havolalar mavjud emas!")
+        return
+    
     count_invites = await db.get_today_referrals()
     total_invites = ""
 
