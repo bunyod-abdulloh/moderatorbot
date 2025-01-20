@@ -1,8 +1,6 @@
-import logging
-
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import CommandStart, Command
+from aiogram.dispatcher.filters.builtin import CommandStart
 from magic_filter import F
 
 from keyboards.default.user_dbuttons import user_main_dbuttons

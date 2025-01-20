@@ -25,15 +25,21 @@ admin_main_buttons = create_keyboard([
 # Bot bo'limi tugmalari
 bot_main_buttons = create_keyboard([
     ["Foydalanuvchilar soni"],
-    ["✅ Oddiy post yuborish"],
-    ["🎞 Mediagroup post yuborish"],
+    ["✅ Oddiy post yuborish", "🎞 Mediagroup post yuborish"],
+    ["⭐️ Havolalar"],
     ["🔙 Ortga"]
 ])
 
 # Guruh bo'limi tugmalari
 group_main_buttons = create_keyboard([
-    ["Guruhlar haqida"],
-    ["🧑‍💻 Oddiy habar yuborish"],
-    ["🖇 Mediagroup habar yuborish"],
+    ["Guruhlar haqida", "Botni guruhga qo'shish"],
+    ["🧑‍💻 Oddiy habar yuborish", "🖇 Mediagroup habar yuborish"],
     ["🔙 Ortga"]
 ])
+
+referrals_buttons = create_keyboard([
+    ["➕ Qo'shish", "🔎 Barchasini ko'rish"],
+    ["Bugungi takliflar soni"],
+    ["🔙 Ortga"]
+]
+)

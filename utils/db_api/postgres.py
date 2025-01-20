@@ -43,24 +43,38 @@ class Database:
             );
             """,
             """
-            CREATE TABLE IF NOT EXISTS count_users (                
-                inviter_id BIGINT NOT NULL UNIQUE,
-                quantity INTEGER NULL
-            );
-            """,
-            """
             CREATE TABLE IF NOT EXISTS groups (                
-                telegram_id BIGINT NULL,
-                group_id BIGINT NOT NULL,
-                users INTEGER DEFAULT 0,
-                created_at DATE DEFAULT CURRENT_DATE,
-                status BOOLEAN DEFAULT TRUE
+                id SERIAL PRIMARY KEY,
+                group_ BIGINT NOT NULL UNIQUE,
+                user_id BIGINT NOT NULL,
+                users INTEGER DEFAULT 0                
             );
             """,
             """
-            CREATE TABLE IF NOT EXISTS send_status (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS count_users (
+                group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,                
+                inviter_id BIGINT NOT NULL UNIQUE,
+                quantity INTEGER DEFAULT 0
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS status_groups (                
+                created_at DATE DEFAULT CURRENT_DATE,                
+                group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE, 
+                on_status BOOLEAN DEFAULT TRUE                
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS send_status (                
                 send_post BOOLEAN DEFAULT FALSE
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS referrals (                
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                created_at DATE DEFAULT CURRENT_DATE,
+                amount INTEGER DEFAULT 0  
             );
             """
         ]
@@ -89,10 +103,10 @@ class Database:
         await self.execute("DROP TABLE users", execute=True)
 
     # =========================== TABLE | COUNT_USERS ===========================
-    async def add_user_to_count_users(self, inviter_id, quantity):
+    async def add_user_to_count_users(self, group_id, inviter_id, quantity):
         """ Add a user to the private table. """
-        sql = "INSERT INTO count_users (inviter_id, quantity) VALUES ($1, $2) returning quantity"
-        return await self.execute(sql, inviter_id, quantity, fetchval=True)
+        sql = "INSERT INTO count_users (group_id, inviter_id, quantity) VALUES ($1, $2, $3) returning quantity"
+        return await self.execute(sql, group_id, inviter_id, quantity, fetchval=True)
 
     async def update_quantity(self, quantity, inviter_id):
         sql = "UPDATE count_users SET quantity = quantity + $1 WHERE inviter_id = $2 returning quantity"
@@ -109,43 +123,54 @@ class Database:
         await self.execute("DROP TABLE count_users", execute=True)
 
     # =========================== TABLE | GROUPS ===========================
-    async def add_group(self, telegram_id, group_id):
+    async def add_group(self, group_id, telegram_id):
         """ Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya """
-        sql = " INSERT INTO groups(telegram_id, group_id) VALUES($1, $2)"
-        group = await self.execute(sql, telegram_id, group_id, fetchrow=True)
+        sql = " INSERT INTO groups(group_, user_id) VALUES($1, $2) returning id"
+        group = await self.execute(sql, group_id, telegram_id, fetchrow=True)
         if not group:
-            sql_select = "SELECT * FROM groups WHERE group_id=$1"
+            sql_select = "SELECT * FROM groups WHERE group_ = $1"
             group = await self.execute(sql_select, group_id, fetchrow=True)
         return group
 
     async def update_add_user(self, users, group_id):
-        sql = "UPDATE groups SET users = $1 WHERE group_id = $2"
+        sql = "UPDATE groups SET users = $1 WHERE group_ = $2"
         return await self.execute(sql, users, group_id, execute=True)
-
-    async def update_group_status(self, status, group_id):
-        sql = "UPDATE groups SET status = $1 WHERE group_id = $2"
-        return await self.execute(sql, status, group_id, execute=True)
 
     async def get_groups(self):
         sql = "SELECT * FROM groups"
         return await self.execute(sql, fetch=True)
 
-    async def get_group(self, group_id, status=False):
-        sql = "SELECT * FROM groups WHERE group_id=$1"
-        if status:
-            return await self.execute(sql, group_id, fetchrow=True)
-        else:
-            return await self.execute(sql, group_id, fetch=True)
+    async def get_group(self, group_id):
+        sql = "SELECT * FROM groups WHERE group_ = $1"
+        return await self.execute(sql, group_id, fetchrow=True)
 
     async def get_group_by_user(self, telegram_id):
-        sql = "SELECT * FROM groups WHERE telegram_id=$1"
+        sql = "SELECT * FROM groups WHERE user_id = $1"
         return await self.execute(sql, telegram_id, fetch=True)
 
     async def delete_group(self, group_id):
-        await self.execute("DELETE FROM groups WHERE group_id=$1", group_id, execute=True)
+        await self.execute("DELETE FROM groups WHERE group_ = $1 returning id", group_id, execute=True)
 
     async def drop_table_groups(self):
-        await self.execute("DROP TABLE groups", execute=True)
+        await self.execute("DROP TABLE groups CASCADE", execute=True)
+
+    # =========================== TABLE | STATUS_GROUPS ===========================
+    async def add_status_group(self, group_id):
+        sql = "INSERT INTO status_groups (group_id) VALUES ($1)"
+        return await self.execute(sql, group_id, fetchrow=True)
+
+    async def update_group_on_status(self, status, group_id):
+        sql = "UPDATE status_groups SET on_status = $1 WHERE group_id = $2"
+        return await self.execute(sql, status, group_id, execute=True)
+
+    async def get_group_on_status(self, group_id):
+        query = (
+            "SELECT sg.group_id, sg.created_at, sg.on_status, sg.phone, sg.link, g.user_id, g.group_ AS "
+            "group_identifier FROM status_groups sg JOIN groups g ON sg.group_id = g.id WHERE g.group_ = $1")
+        return await self.execute(query, group_id, fetchrow=True)
+
+    async def drop_table_status_groups(self):
+        await self.execute("DROP TABLE status_groups", execute=True)
 
     # =========================== TABLE | SEND_STATUS ===========================
     async def add_send_status(self):
@@ -159,3 +184,37 @@ class Database:
     async def get_send_status(self):
         sql = "SELECT send_post FROM send_status"
         return await self.execute(sql, fetchval=True)
+
+    async def drop_table_send_status(self):
+        await self.execute("DROP TABLE send_status", execute=True)
+
+    async def delete_table_by_name(self, table_name, group_id):
+        await self.execute(f"DELETE FROM {table_name} WHERE group_id = $1", group_id, fetchval=True)
+
+    # =========================== TABLE | REFERRAL ===========================
+    async def add_referral(self, name):
+        sql = "INSERT INTO referrals (name) VALUES ($1)"
+        return await self.execute(sql, name, fetchrow=True)
+
+    async def update_referral(self, name):
+        sql = "UPDATE referrals SET amount = amount + 1 WHERE name = $1"
+        return await self.execute(sql, name, execute=True)
+
+    async def get_referral_by_id(self, id_):
+        sql = "SELECT * FROM referrals WHERE id = $1"
+        return await self.execute(sql, id_, fetchrow=True)
+
+    async def get_today_referrals(self):
+        sql = ("SELECT name, SUM(amount) AS total_invites FROM referrals WHERE created_at = CURRENT_DATE GROUP BY name "
+               "ORDER BY MIN(id)")
+        return await self.execute(sql, fetch=True)
+
+    async def get_all_referrals(self):
+        sql = "SELECT name, id FROM referrals"
+        return await self.execute(sql, fetch=True)
+
+    async def delete_referral_by_id(self, id_):
+        await self.execute(f"DELETE FROM referrals WHERE id = $1", id_, fetchval=True)
+
+    async def drop_table_referrals(self):
+        await self.execute("DROP TABLE referrals", execute=True)

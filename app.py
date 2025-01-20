@@ -11,8 +11,11 @@ async def on_startup(dispatcher):
     await on_startup_notify(dispatcher)
     await db.create()
     # await db.drop_table_groups()
+    # await db.drop_table_status_groups()
+    # await db.drop_table_send_status()
     # await db.drop_table_users()
     # await db.drop_table_count_users()
+    # await db.drop_table_referrals()
     await db.create_tables()
 
 

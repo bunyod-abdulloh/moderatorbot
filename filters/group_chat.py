@@ -1,14 +1,16 @@
-from aiogram import types, Bot
+from aiogram import types
 from aiogram.dispatcher.filters import BoundFilter
-from aiogram.types import ChatMemberStatus
+from aiogram.utils.exceptions import BotKicked, BadRequest
+
+from data.config import ADMINS
+from loader import db, bot
+
+chat_types = ['group', 'supergroup']
 
 
 class IsGroup(BoundFilter):
     async def check(self, message: types.Message) -> bool:
-        return message.chat.type in (
-            types.ChatType.GROUP,
-            types.ChatType.SUPERGROUP,
-        )
+        return message.chat.type in chat_types
 
 
 class IsGroupPhoto(BoundFilter):
@@ -16,42 +18,43 @@ class IsGroupPhoto(BoundFilter):
 
     async def check(self, message: types.Message) -> bool:
         # Guruh yoki superguruhda ekanligini tekshirish
-        if message.chat.type not in (types.ChatType.GROUP, types.ChatType.SUPERGROUP):
+        if message.chat.type not in chat_types:
             return False
         # Xabarda rasm borligini tekshirish
         return bool(message.photo)
 
 
 class IsGroupAdminOrOwner(BoundFilter):
+
     async def check(self, message: types.Message) -> bool:
-        # Guruhda bo'lishi va foydalanuvchining statusini tekshirish
-        if message.chat.type not in [types.ChatType.GROUP, types.ChatType.SUPERGROUP]:
-            return False
-
-        # `get_chat_member` metodidan foydalangan holda foydalanuvchining statusini tekshirish
         member = await message.chat.get_member(message.from_user.id)
-
-        return member.status in [types.ChatMemberStatus.ADMINISTRATOR, types.ChatMemberStatus.CREATOR]
+        return member.is_chat_admin() or member.is_chat_creator()
 
 
 class IsGroupAndBotAdmin(BoundFilter):
     async def check(self, message: types.Message) -> bool:
-        if message.chat.type not in (
-                types.ChatType.GROUP,
-                types.ChatType.SUPERGROUP,
-        ):
+        bot_info = await bot.me
+
+        if message.chat.type not in chat_types:
             return False
 
         # Botning admin ekanligini tekshirish
-        bot = message.bot
-        chat_member = await bot.get_chat_member(message.chat.id, bot.id)
-        return chat_member.status in (
-            types.ChatMemberStatus.ADMINISTRATOR,
-            types.ChatMemberStatus.OWNER,
-        )
+        chat_member = await bot.get_chat_member(message.chat.id, bot_info.id)
+        return chat_member.is_chat_creator() or chat_member.is_chat_admin()
 
 
-async def is_admin(bot: Bot, chat_id: int, user_id: int) -> bool:
-    """Foydalanuvchi guruh administratori ekanligini tekshirish."""
-    member = await bot.get_chat_member(chat_id, user_id)
-    return member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR]
+class IsGroupAndForwardedFromAnotherChat(BoundFilter):
+    """Guruhda forward qilingan rasmlarni o'chirish, boshqa guruh yoki kanaldan forward qilingan xabarni aniqlash."""
+
+    async def check(self, message: types.Message) -> bool:
+
+        # Xabarda rasm borligini tekshirish
+        if not any([message.audio, message.document, message.photo, message.video, message.voice]):
+            return False
+
+        # Xabar forward qilinganmi yoki yo'qligini tekshirish
+        if message.forward_from_chat:
+            # Agar forward qilingan chat turi guruh yoki kanal bo'lsa, o'chirib yuboramiz
+            if message.forward_from_chat.type in ['group', 'supergroup', 'channel']:
+                return True  # Xabarni o'chirish kerak
+        return False  # Forward qilinmagan yoki boshqa manbadan bo'lmagan rasm

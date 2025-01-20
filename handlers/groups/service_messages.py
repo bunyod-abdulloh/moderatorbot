@@ -1,15 +1,10 @@
-import logging
 from aiogram import types
-from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked, BadRequest
+from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked
+
 from data.config import ADMINS, BOT_ID
-from filters.group_chat import IsGroup, IsGroupAdminOrOwner
+from filters.group_chat import IsGroup, IsGroupAdminOrOwner, IsGroupAndBotAdmin
 from loader import dp, bot, db
-
-
-async def alert_message(alert_text, message: types.Message):
-    text = (f"Bot guruhga admin qilinmaganligi sababli foydalanuvchi {alert_text} haqidagi habarni "
-            "o'chirmadi!\n\nBot to'g'ri ishlashi uchun botni guruhga admin qilishingiz lozim!")
-    await message.answer(text)
+from utils.user_functions import logging_text
 
 
 def get_restrict_permissions(can_send: bool):
@@ -22,10 +17,11 @@ def get_restrict_permissions(can_send: bool):
 
 
 async def check_bot_status(message: types.Message):
-    bot_ = await db.get_group(message.chat.id, True)
+    bot_ = await db.get_group_on_status(message.chat.id)
 
-    if bot_ and not bot_['status']:
+    if bot_ and not bot_['on_status']:
         await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
+        await bot.leave_chat(message.chat.id)
         return False
     return True
 
@@ -33,8 +29,17 @@ async def check_bot_status(message: types.Message):
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
-        if not await check_bot_status(message):
-            return
+        check_bot = await db.get_group(message.chat.id)
+
+        if check_bot:
+            bot_ = await db.get_group_on_status(message.chat.id)
+
+            if bot_ and not bot_['on_status']:
+                await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
+                await bot.leave_chat(message.chat.id)
+                return False
+            return True
+
         member_names = [member.first_name for member in message.new_chat_members]
 
         for member in message.new_chat_members:
@@ -43,19 +48,25 @@ async def new_member_admin(message: types.Message):
                     chat_id=ADMINS[0],
                     text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhiga qo'shildi!"
                 )
-                await db.add_group(telegram_id=message.from_user.id, group_id=message.chat.id)
+                id_ = await db.add_group(telegram_id=message.from_user.id, group_id=message.chat.id)
+
+                await db.add_status_group(id_['id'])
+                await db.add_send_status()
 
         await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
         await message.delete()
 
     except MessageCantBeDeleted:
-        await alert_message(alert_text="guruhga qo'shilganligi", message=message)
+        await message.answer(
+            text="Bot guruhga admin qilinmaganligi sababli foydalanuvchi guruhga qo'shilganligi haqidagi habarni "
+                 "o'chirmadi!\n\nBot to'g'ri ishlashi uchun botni guruhga admin qilishingiz lozim!"
+        )
 
     except Exception as err:
-        logging.error(err)
+        logging_text(err)
 
 
-@dp.message_handler(IsGroup(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
+@dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def handle_new_chat_members(message: types.Message):
     try:
         group = await db.get_group(message.chat.id)
@@ -85,23 +96,22 @@ async def handle_new_chat_members(message: types.Message):
         await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
         await message.delete()
 
-    except MessageCantBeDeleted:
-        await alert_message(alert_text="guruhga qo'shilganligi", message=message)
     except Exception as err:
-        logging.error(err)
+        logging_text(err)
 
 
 @dp.message_handler(IsGroup(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
 async def banned_member(message: types.Message):
     try:
-        await message.delete()
-    except MessageCantBeDeleted:
-        await alert_message(alert_text="guruhdan chiqqanligi", message=message)
-    except BotKicked or BadRequest:
+        if await IsGroupAndBotAdmin().check(message):
+            await message.delete()
+
+    except BotKicked:
         await bot.send_message(
             chat_id=ADMINS[0],
             text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
         )
         await db.delete_group(group_id=message.chat.id)
+
     except Exception as err:
-        logging.error(err)
+        logging_text(err)

@@ -93,8 +93,8 @@ async def navigation_callback(call: types.CallbackQuery):
 async def get_groups_handler(call: types.CallbackQuery):
     group_id = int(call.data.split("_")[1])
     group_info = await get_group_info(group_id)
-    group_db_info = await db.get_group(group_id)
-    user = await bot.get_chat_member(group_id, group_db_info['telegram_id'])
+    join_info = await db.get_group_on_status(group_id)
+    user = await bot.get_chat_member(group_id, join_info['user_id'])
 
     await call.message.edit_text(
         (
@@ -104,7 +104,9 @@ async def get_groups_handler(call: types.CallbackQuery):
             f"Foydalanuvchilar soni: {group_info['member_count']}\n"
             f"Mas'ul: {user.user.full_name}\n"
             f"Username: @{user.user.username}\n"
-            f"Status: {user.status.capitalize()}"
+            f"Status: {user.status.capitalize()}\n"
+            f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
+            f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}"
         ),
         reply_markup=group_button(group_id)
     )
