@@ -15,7 +15,7 @@ async def on_startup(dispatcher):
     # await db.drop_table_send_status()
     # await db.drop_table_users()
     # await db.drop_table_count_users()
-    # await db.drop_table_referrals()
+    await db.drop_table_referrals()
     await db.create_tables()
 
 

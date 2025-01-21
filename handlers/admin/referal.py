@@ -111,12 +111,12 @@ async def get_referral_handler(call: types.CallbackQuery):
     referral_id = int(call.data.split("_")[1])
     referral = await db.get_referral_by_id(referral_id)
     bot_username = (await bot.me).username
-
+    print(referral)
     ref_name = f"https://t.me/{bot_username}?start={referral['name']}"
     await call.message.edit_text(
         text=f"Havola nomi: {ref_name}\n"
              f"Havola qo'shilgan sana: {referral['created_at']}\n"
-             f"Takliflar soni: {referral['amount']}",
+             f"Takliflar soni: {referral['total_amount']}",
         reply_markup=back_to_ref_main(ref_id=referral_id)
     )
 
@@ -169,7 +169,7 @@ async def today_referrals_count(message: types.Message):
     if not referrals:
         await message.answer("Havolalar mavjud emas!")
         return
-    
+
     count_invites = await db.get_today_referrals()
     total_invites = ""
 

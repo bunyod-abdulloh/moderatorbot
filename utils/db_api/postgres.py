@@ -73,6 +73,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS referrals (                
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
+                user_id BIGINT NULL UNIQUE,
                 created_at DATE DEFAULT CURRENT_DATE,
                 amount INTEGER DEFAULT 0  
             );
@@ -196,12 +197,17 @@ class Database:
         sql = "INSERT INTO referrals (name) VALUES ($1)"
         return await self.execute(sql, name, fetchrow=True)
 
+    async def add_user_referral(self, name, user_id):
+        sql = "INSERT INTO referrals (name, user_id, amount) VALUES ($1, $2, 1) ON CONFLICT (user_id) DO NOTHING"
+        return await self.execute(sql, name, user_id, fetchrow=True)
+
     async def update_referral(self, name):
-        sql = "UPDATE referrals SET amount = amount + 1 WHERE name = $1"
+        sql = "UPDATE referrals SET amount = amount + 1, created_at = current_date WHERE name = $1"
         return await self.execute(sql, name, execute=True)
 
     async def get_referral_by_id(self, id_):
-        sql = "SELECT * FROM referrals WHERE id = $1"
+        sql = ("SELECT r.*, agg.total_amount FROM referrals r LEFT JOIN (SELECT name, SUM(amount) AS "
+               "total_amount FROM referrals GROUP BY name) agg ON r.name = agg.name WHERE r.id = $1")
         return await self.execute(sql, id_, fetchrow=True)
 
     async def get_today_referrals(self):
@@ -210,7 +216,7 @@ class Database:
         return await self.execute(sql, fetch=True)
 
     async def get_all_referrals(self):
-        sql = "SELECT name, id FROM referrals"
+        sql = "SELECT name, id FROM referrals WHERE amount = 0"
         return await self.execute(sql, fetch=True)
 
     async def delete_referral_by_id(self, id_):
