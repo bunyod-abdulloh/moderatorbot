@@ -4,6 +4,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.utils.exceptions import BotKicked, MigrateToChat
 from magic_filter import F
 
+from data.config import BOT_ID
 from loader import dp, bot, db
 from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import group_main_buttons
@@ -64,6 +65,7 @@ async def handle_group_info_(group_id, call: types.CallbackQuery):
     group_info = await get_group_info(group_id)
     join_info = await db.get_group_on_status(group_id)
     user = await bot.get_chat_member(group_id, join_info['user_id'])
+    bot_status = (await bot.get_chat_member(group_id, BOT_ID)).status
 
     await call.message.edit_text(
         (
@@ -75,7 +77,8 @@ async def handle_group_info_(group_id, call: types.CallbackQuery):
             f"Username: @{user.user.username}\n"
             f"Status: {user.status.capitalize()}\n"
             f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
-            f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}"
+            f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}\n"
+            f"Botni guruhdagi statusi: {bot_status.capitalize()}"
         ),
         reply_markup=group_button(group_id)
     )
