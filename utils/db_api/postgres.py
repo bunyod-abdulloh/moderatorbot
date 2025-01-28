@@ -137,6 +137,10 @@ class Database:
         sql = "UPDATE groups SET users = $1 WHERE group_ = $2"
         return await self.execute(sql, users, group_id, execute=True)
 
+    async def update_group_id(self, new_group_id, old_group_id):
+        sql = "UPDATE groups SET group_ = $1 WHERE group_ = $2"
+        return await self.execute(sql, new_group_id, old_group_id, execute=True)
+
     async def get_groups(self):
         sql = "SELECT * FROM groups"
         return await self.execute(sql, fetch=True)

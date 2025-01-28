@@ -90,7 +90,7 @@ async def navigation_callback(call: types.CallbackQuery):
 
 
 @dp.callback_query_handler(F.data.startswith("getgroup_"))
-async def get_groups_handler(call: types.CallbackQuery):
+async def handle_group_info(call: types.CallbackQuery):
     group_id = int(call.data.split("_")[1])
     try:
         group_info = await get_group_info(group_id)
@@ -113,10 +113,11 @@ async def get_groups_handler(call: types.CallbackQuery):
         )
     except MigrateToChat as err:
         new_id = err.migrate_to_chat_id
-        logging_text(new_id)
-        await call.message.edit_text(
-            text=new_id
-        )
+        await db.update_group_id(new_id, group_id)
+        # Xatolikdan keyin funksiyani qayta chaqirish
+        await handle_group_info(call)
+    except Exception as err:
+        await logging_text(err)
 
 
 @dp.callback_query_handler(F.data.startswith(("post_to_group:", "media_to_group:")))

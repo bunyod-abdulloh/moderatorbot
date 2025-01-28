@@ -41,7 +41,7 @@ async def bot_start(message: types.Message, state: FSMContext):
         await message.answer(text=text_, reply_markup=user_main_ibuttons())
         await db.add_user(message.from_user.id)
     except Exception as err:
-        logging_text(err)
+        await logging_text(err)
     await state.finish()
 
 

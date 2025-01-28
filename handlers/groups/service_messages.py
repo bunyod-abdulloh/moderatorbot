@@ -63,7 +63,7 @@ async def new_member_admin(message: types.Message):
         )
 
     except Exception as err:
-        logging_text(err)
+        await logging_text(err)
 
 
 @dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
@@ -97,7 +97,7 @@ async def handle_new_chat_members(message: types.Message):
         await message.delete()
 
     except Exception as err:
-        logging_text(err)
+        await logging_text(err)
 
 
 @dp.message_handler(IsGroup(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
@@ -114,4 +114,4 @@ async def banned_member(message: types.Message):
         await db.delete_group(group_id=message.chat.id)
 
     except Exception as err:
-        logging_text(err)
+        await logging_text(err)
