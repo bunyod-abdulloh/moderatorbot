@@ -60,6 +60,27 @@ async def paginate_groups(call: types.CallbackQuery, current_page: int, next_pag
         pass
 
 
+async def handle_group_info_(group_id, call: types.CallbackQuery):
+    group_info = await get_group_info(group_id)
+    join_info = await db.get_group_on_status(group_id)
+    user = await bot.get_chat_member(group_id, join_info['user_id'])
+
+    await call.message.edit_text(
+        (
+            f"Guruh ma'lumotlari\n\n"
+            f"Guruh nomi: {group_info['name']}\n"
+            f"Guruh username: @{group_info['username']}\n"
+            f"Foydalanuvchilar soni: {group_info['member_count']}\n"
+            f"Mas'ul: {user.user.full_name}\n"
+            f"Username: @{user.user.username}\n"
+            f"Status: {user.status.capitalize()}\n"
+            f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
+            f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}"
+        ),
+        reply_markup=group_button(group_id)
+    )
+
+
 # Handlerlar
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar")
 async def groups_handler(message: types.Message):
@@ -93,29 +114,12 @@ async def navigation_callback(call: types.CallbackQuery):
 async def handle_group_info(call: types.CallbackQuery):
     group_id = int(call.data.split("_")[1])
     try:
-        group_info = await get_group_info(group_id)
-        join_info = await db.get_group_on_status(group_id)
-        user = await bot.get_chat_member(group_id, join_info['user_id'])
-
-        await call.message.edit_text(
-            (
-                f"Guruh ma'lumotlari\n\n"
-                f"Guruh nomi: {group_info['name']}\n"
-                f"Guruh username: @{group_info['username']}\n"
-                f"Foydalanuvchilar soni: {group_info['member_count']}\n"
-                f"Mas'ul: {user.user.full_name}\n"
-                f"Username: @{user.user.username}\n"
-                f"Status: {user.status.capitalize()}\n"
-                f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
-                f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}"
-            ),
-            reply_markup=group_button(group_id)
-        )
+        await handle_group_info_(group_id, call)
     except MigrateToChat as err:
         new_id = err.migrate_to_chat_id
         await db.update_group_id(new_id, group_id)
         # Xatolikdan keyin funksiyani qayta chaqirish
-        await handle_group_info(call)
+        await handle_group_info_(group_id, call)
     except Exception as err:
         await logging_text(err)
 
