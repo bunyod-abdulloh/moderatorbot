@@ -170,7 +170,7 @@ class Database:
 
     async def get_group_on_status(self, group_id):
         query = (
-            "SELECT sg.group_id, sg.created_at, sg.on_status, sg.phone, sg.link, g.user_id, g.group_ AS "
+            "SELECT sg.group_id, sg.created_at, sg.on_status, g.user_id, g.group_ AS "
             "group_identifier FROM status_groups sg JOIN groups g ON sg.group_id = g.id WHERE g.group_ = $1")
         return await self.execute(query, group_id, fetchrow=True)
 
