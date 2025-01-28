@@ -4,7 +4,6 @@ import traceback
 from aiogram import Dispatcher
 
 from data.config import ADMIN_GROUP_ID
-from utils.user_functions import logging_text
 
 
 async def on_startup_notify(dp: Dispatcher):
