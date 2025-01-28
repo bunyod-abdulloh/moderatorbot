@@ -1,7 +1,7 @@
 from typing import List
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.utils.exceptions import BotKicked
+from aiogram.utils.exceptions import BotKicked, MigrateToChat
 from magic_filter import F
 
 from loader import dp, bot, db
@@ -9,7 +9,7 @@ from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import group_main_buttons
 from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button
 from states.admin import AdminStates
-from utils.user_functions import extracter
+from utils.user_functions import extracter, logging_text
 
 # Xabarlar va ogohlantirish matni
 WARNING_TEXT = (
@@ -92,24 +92,31 @@ async def navigation_callback(call: types.CallbackQuery):
 @dp.callback_query_handler(F.data.startswith("getgroup_"))
 async def get_groups_handler(call: types.CallbackQuery):
     group_id = int(call.data.split("_")[1])
-    group_info = await get_group_info(group_id)
-    join_info = await db.get_group_on_status(group_id)
-    user = await bot.get_chat_member(group_id, join_info['user_id'])
+    try:
+        group_info = await get_group_info(group_id)
+        join_info = await db.get_group_on_status(group_id)
+        user = await bot.get_chat_member(group_id, join_info['user_id'])
 
-    await call.message.edit_text(
-        (
-            f"Guruh ma'lumotlari\n\n"
-            f"Guruh nomi: {group_info['name']}\n"
-            f"Guruh username: @{group_info['username']}\n"
-            f"Foydalanuvchilar soni: {group_info['member_count']}\n"
-            f"Mas'ul: {user.user.full_name}\n"
-            f"Username: @{user.user.username}\n"
-            f"Status: {user.status.capitalize()}\n"
-            f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
-            f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}"
-        ),
-        reply_markup=group_button(group_id)
-    )
+        await call.message.edit_text(
+            (
+                f"Guruh ma'lumotlari\n\n"
+                f"Guruh nomi: {group_info['name']}\n"
+                f"Guruh username: @{group_info['username']}\n"
+                f"Foydalanuvchilar soni: {group_info['member_count']}\n"
+                f"Mas'ul: {user.user.full_name}\n"
+                f"Username: @{user.user.username}\n"
+                f"Status: {user.status.capitalize()}\n"
+                f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
+                f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}"
+            ),
+            reply_markup=group_button(group_id)
+        )
+    except MigrateToChat as err:
+        new_id = err.migrate_to_chat_id
+        logging_text(new_id)
+        await call.message.edit_text(
+            text=new_id
+        )
 
 
 @dp.callback_query_handler(F.data.startswith(("post_to_group:", "media_to_group:")))
