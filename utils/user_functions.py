@@ -2,7 +2,7 @@ import logging
 import traceback
 
 from data.config import ADMIN_GROUP_ID
-from loader import dp, bot
+from loader import bot
 
 cancel_text = "Jarayonni bekor qilish uchun /bekor buyrug'ini kiriting!"
 
