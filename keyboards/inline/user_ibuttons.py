@@ -41,8 +41,8 @@ async def get_groups_ibuttons(user_groups, off_add_user=False):
     markup = InlineKeyboardMarkup(row_width=1)
     action = "increase_off" if off_add_user else "increase_on"
     for group in user_groups:
-        group_name = (await bot.get_chat(chat_id=group['group_id'])).full_name
-        markup.add(InlineKeyboardButton(text=group_name, callback_data=f"{action}:{group['group_id']}"))
+        group_name = (await bot.get_chat(chat_id=group['group_'])).full_name
+        markup.add(InlineKeyboardButton(text=group_name, callback_data=f"{action}:{group['group_']}"))
     return markup
 
 

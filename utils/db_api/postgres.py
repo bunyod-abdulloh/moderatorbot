@@ -106,12 +106,14 @@ class Database:
     # =========================== TABLE | COUNT_USERS ===========================
     async def add_user_to_count_users(self, group_id, inviter_id, quantity):
         """ Add a user to the private table. """
-        sql = "INSERT INTO count_users (group_id, inviter_id, quantity) VALUES ($1, $2, $3) returning quantity"
+        sql = ("INSERT INTO count_users (group_id, inviter_id, quantity) VALUES ($1, $2, $3) ON CONFLICT (inviter_id) "
+               "DO NOTHING returning quantity")
         return await self.execute(sql, group_id, inviter_id, quantity, fetchval=True)
 
-    async def update_quantity(self, quantity, inviter_id):
-        sql = "UPDATE count_users SET quantity = quantity + $1 WHERE inviter_id = $2 returning quantity"
-        return await self.execute(sql, quantity, inviter_id, fetchval=True)
+    async def update_quantity(self, quantity, inviter_id, group_id):
+        sql = ("UPDATE count_users SET quantity = quantity + $1 WHERE inviter_id = $2 AND group_id = $3 "
+               "returning quantity")
+        return await self.execute(sql, quantity, inviter_id, group_id, fetchval=True)
 
     async def count_users_inviter(self, inviter_id):
         sql = "SELECT quantity FROM count_users WHERE inviter_id=$1"

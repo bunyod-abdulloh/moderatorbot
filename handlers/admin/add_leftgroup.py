@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.utils.exceptions import Unauthorized
 
 from magic_filter import F
 
@@ -14,8 +15,11 @@ async def handle_leftbot(call: types.CallbackQuery):
     await bot.leave_chat(group_id)
     group_name = (await bot.get_chat(group_id)).full_name
     if action == "restrictbot":
-        get_group = await db.get_group(group_id)
-        await db.update_group_on_status(False, get_group['id'])
+        try:
+            get_group = await db.get_group(group_id)
+            await db.update_group_on_status(False, get_group['id'])
+        except Unauthorized:
+            pass
         await call.message.edit_text(text=f"Bot {group_name} guruhidan chiqarildi va vaqtincha foydalanish cheklandi!")
 
     if action == "leftbot":

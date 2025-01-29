@@ -26,6 +26,12 @@ async def check_bot_status(message: types.Message):
     return True
 
 
+async def restrict_message(message: types.Message, member_names: list, group: list):
+    await message.answer(
+        text=f"Xush kelibsiz, {', '.join(member_names)}!\n\nGuruhda yozish uchun {group['users']} ta "
+             f"foydalanuvchi qo'shishingiz lozim!")
+
+
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
@@ -34,14 +40,13 @@ async def new_member_admin(message: types.Message):
         if check_bot:
             bot_ = await db.get_group_on_status(message.chat.id)
 
-            if bot_ and not bot_['on_status']:
+            if bot_ and bot_['on_status'] == False:
                 await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
                 await bot.leave_chat(message.chat.id)
                 return False
-            return True
 
         member_names = [member.first_name for member in message.new_chat_members]
-
+        group = await db.get_group(message.chat.id)
         for member in message.new_chat_members:
             if member.id == BOT_ID:
                 await bot.send_message(
@@ -52,8 +57,15 @@ async def new_member_admin(message: types.Message):
 
                 await db.add_status_group(id_['id'])
                 await db.add_send_status()
+            else:
+                if group and group['users'] > 0:
+                    await db.add_user_to_count_users(group['id'], member.id, 0)
+                    await message.chat.restrict(user_id=member.id, permissions=get_restrict_permissions(False))
 
-        await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
+        if group and group['users'] > 0:
+            await restrict_message(message, member_names, group)
+        else:
+            await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
         await message.delete()
 
     except MessageCantBeDeleted:
@@ -75,6 +87,8 @@ async def handle_new_chat_members(message: types.Message):
 
         if message.new_chat_members[0].id == inviter_id and group['users'] > 0:
             await message.chat.restrict(inviter_id, permissions=get_restrict_permissions(False))
+            await restrict_message(message, member_names, group)
+            return
         else:
             for member in message.new_chat_members:
                 if member.is_bot:
@@ -84,10 +98,12 @@ async def handle_new_chat_members(message: types.Message):
                 user_data = await db.count_users_inviter(inviter_id)
 
                 if user_data is None:
-                    quantity = await db.add_user_to_count_users(inviter_id=inviter_id,
+                    quantity = await db.add_user_to_count_users(group_id=group['id'], inviter_id=inviter_id,
                                                                 quantity=len(message.new_chat_members))
+
                 else:
-                    quantity = await db.update_quantity(quantity=len(message.new_chat_members), inviter_id=inviter_id)
+                    quantity = await db.update_quantity(quantity=len(message.new_chat_members), inviter_id=inviter_id,
+                                                        group_id=group['id'])
 
                 if quantity >= group['users']:
                     await message.chat.restrict(user_id=inviter_id, permissions=get_restrict_permissions(True))
