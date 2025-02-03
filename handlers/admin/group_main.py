@@ -122,7 +122,7 @@ async def handle_group_info(call: types.CallbackQuery):
         new_id = err.migrate_to_chat_id
         await db.update_group_id(new_id, group_id)
         # Xatolikdan keyin funksiyani qayta chaqirish
-        await handle_group_info_(group_id, call)
+        await handle_group_info_(new_id, call)
     except Exception as err:
         await logging_text(err)
 
