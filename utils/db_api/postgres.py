@@ -163,7 +163,7 @@ class Database:
 
     # =========================== TABLE | STATUS_GROUPS ===========================
     async def add_status_group(self, group_id):
-        sql = "INSERT INTO status_groups (group_id) VALUES ($1)"
+        sql = "INSERT INTO status_groups (group_id) VALUES ($1) ON CONFLICT (group_id) DO NOTHING"
         return await self.execute(sql, group_id, fetchrow=True)
 
     async def update_group_on_status(self, status, group_id):
@@ -181,7 +181,7 @@ class Database:
 
     # =========================== TABLE | SEND_STATUS ===========================
     async def add_send_status(self):
-        sql = "INSERT INTO send_status (send_post) VALUES (false)"
+        sql = "INSERT INTO send_status (send_post) VALUES (false) ON CONFLICT (send_post) DO NOTHING"
         return await self.execute(sql, fetchrow=True)
 
     async def update_send_status(self, send_post):

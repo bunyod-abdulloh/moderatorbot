@@ -6,11 +6,12 @@ from aiogram import types
 from aiogram.dispatcher.filters import Command
 from aiogram.utils.exceptions import BadRequest
 
-from filters import IsGroup, AdminFilter
+from filters import IsGroupAndBotAdmin, AdminFilter
 from loader import dp
+from utils.user_functions import logging_text
 
 
-@dp.message_handler(IsGroup(), Command("ro", prefixes="!/"), AdminFilter())
+@dp.message_handler(IsGroupAndBotAdmin(), Command("ro", prefixes="!/"), AdminFilter())
 async def read_only_mode(message: types.Message):
     try:
         member = message.reply_to_message.from_user
@@ -37,9 +38,12 @@ async def read_only_mode(message: types.Message):
     except BadRequest as err:
         await message.answer(f"Xatolik: {err}")
 
+    except Exception as err:
+        await logging_text(err)
+
 
 # Undo read-only mode
-@dp.message_handler(IsGroup(), Command("unro", prefixes="!/"), AdminFilter())
+@dp.message_handler(IsGroupAndBotAdmin(), Command("unro", prefixes="!/"), AdminFilter())
 async def undo_read_only_mode(message: types.Message):
     member = message.reply_to_message.from_user
     member_id = member.id
@@ -57,7 +61,7 @@ async def undo_read_only_mode(message: types.Message):
 
 
 # Ban user
-@dp.message_handler(IsGroup(), Command("ban", prefixes="!/"), AdminFilter())
+@dp.message_handler(IsGroupAndBotAdmin(), Command("ban", prefixes="!/"), AdminFilter())
 async def ban_user(message: types.Message):
     member = message.reply_to_message.from_user
     member_id = member.id
@@ -72,7 +76,7 @@ async def ban_user(message: types.Message):
 
 
 # Unban user
-@dp.message_handler(IsGroup(), Command("unban", prefixes="!/"), AdminFilter())
+@dp.message_handler(IsGroupAndBotAdmin(), Command("unban", prefixes="!/"), AdminFilter())
 async def unban_user(message: types.Message):
     member = message.reply_to_message.from_user
     member_id = member.id

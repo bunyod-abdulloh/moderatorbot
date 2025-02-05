@@ -1,8 +1,10 @@
+import asyncio
+
 from aiogram import types
 from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked
 
 from data.config import ADMINS, BOT_ID
-from filters.group_chat import IsGroup, IsGroupAdminOrOwner, IsGroupAndBotAdmin
+from filters.group_chat import IsGroupAdminOrOwner, IsGroupAndBotAdmin
 from loader import dp, bot, db
 from utils.user_functions import logging_text
 
@@ -27,9 +29,10 @@ async def check_bot_status(message: types.Message):
 
 
 async def restrict_message(message: types.Message, member_names: list, group: list):
-    await message.answer(
+    msg = await message.answer(
         text=f"Xush kelibsiz, {', '.join(member_names)}!\n\nGuruhda yozish uchun {group['users']} ta "
              f"foydalanuvchi qo'shishingiz lozim!")
+    return msg
 
 
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
@@ -59,14 +62,15 @@ async def new_member_admin(message: types.Message):
                 await db.add_send_status()
             else:
                 if group and group['users'] > 0:
-                    await db.add_user_to_count_users(group['id'], member.id, 0)
                     await message.chat.restrict(user_id=member.id, permissions=get_restrict_permissions(False))
 
         if group and group['users'] > 0:
-            await restrict_message(message, member_names, group)
+            msg = await restrict_message(message, member_names, group)
         else:
-            await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
+            msg = await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
         await message.delete()
+        await asyncio.sleep(5)
+        await message.chat.delete_message(msg.message_id)
 
     except MessageCantBeDeleted:
         await message.answer(
@@ -87,15 +91,15 @@ async def handle_new_chat_members(message: types.Message):
 
         if message.new_chat_members[0].id == inviter_id and group['users'] > 0:
             await message.chat.restrict(inviter_id, permissions=get_restrict_permissions(False))
-            await restrict_message(message, member_names, group)
-            return
+            msg = await restrict_message(message, member_names, group)
         else:
-            for member in message.new_chat_members:
-                if member.is_bot:
-                    await message.chat.kick(user_id=member.id)
-
             if group['users'] > 0:
                 user_data = await db.count_users_inviter(inviter_id)
+                for member in message.new_chat_members:
+                    if member.is_bot:
+                        await message.chat.kick(user_id=member.id)
+                    else:
+                        await message.chat.restrict(member.id, permissions=get_restrict_permissions(False))
 
                 if user_data is None:
                     quantity = await db.add_user_to_count_users(group_id=group['id'], inviter_id=inviter_id,
@@ -108,19 +112,21 @@ async def handle_new_chat_members(message: types.Message):
                 if quantity >= group['users']:
                     await message.chat.restrict(user_id=inviter_id, permissions=get_restrict_permissions(True))
                     await db.delete_from_count_user(inviter_id=inviter_id)
-
-        await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
+                msg = await restrict_message(message, member_names, group)
+            else:
+                msg = await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
         await message.delete()
+        await asyncio.sleep(5)
+        await message.chat.delete_message(msg.message_id)
 
     except Exception as err:
         await logging_text(err)
 
 
-@dp.message_handler(IsGroup(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
+@dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
 async def banned_member(message: types.Message):
     try:
-        if await IsGroupAndBotAdmin().check(message):
-            await message.delete()
+        await message.delete()
 
     except BotKicked:
         await bot.send_message(

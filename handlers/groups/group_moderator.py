@@ -1,5 +1,5 @@
 from aiogram import types
-from filters.group_chat import IsGroupAdminAndForwarded, IsGroupAndBotAdmin, IsGroupAndForwarded, IsGroupAdminOrOwner
+from filters.group_chat import IsGroupAdminAndForwarded, IsGroupAndBotAdmin, IsGroupAdminOrOwner
 from loader import dp
 import re
 
@@ -34,8 +34,8 @@ async def handle_contact_message(message: types.Message):
     await message.delete()
 
 
-@dp.message_handler(IsGroupAndForwarded(), content_types=types.ContentTypes.ANY, is_media_group=True)
-@dp.message_handler(IsGroupAndForwarded(), content_types=types.ContentTypes.ANY)
+@dp.message_handler(IsGroupAdminAndForwarded(), content_types=types.ContentTypes.ANY, is_media_group=True)
+@dp.message_handler(IsGroupAdminAndForwarded(), content_types=types.ContentTypes.ANY)
 async def handle_forwarded_messages(message: types.Message):
     if await IsGroupAdminOrOwner().check(message):
         return
