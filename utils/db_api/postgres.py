@@ -106,8 +106,9 @@ class Database:
     # =========================== TABLE | COUNT_USERS ===========================
     async def add_user_to_count_users(self, group_id, inviter_id, quantity):
         """ Add a user to the private table. """
-        sql = ("INSERT INTO count_users (group_id, inviter_id, quantity) VALUES ($1, $2, $3) ON CONFLICT (inviter_id) "
-               "DO NOTHING returning quantity")
+        sql = ("INSERT INTO count_users (group_id, inviter_id, quantity) VALUES ($1, $2, $3) "
+               "ON CONFLICT (group_id, inviter_id) DO UPDATE SET quantity = count_users.quantity + EXCLUDED.quantity "
+               "RETURNING quantity")
         return await self.execute(sql, group_id, inviter_id, quantity, fetchval=True)
 
     async def update_quantity(self, quantity, inviter_id, group_id):
@@ -128,7 +129,7 @@ class Database:
     # =========================== TABLE | GROUPS ===========================
     async def add_group(self, group_id, telegram_id):
         """ Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya """
-        sql = " INSERT INTO groups(group_, user_id) VALUES($1, $2) ON CONFLICT (group_) DO NOTHING returning id"
+        sql = "INSERT INTO groups(group_, user_id) VALUES($1, $2) ON CONFLICT (group_) DO NOTHING returning id"
         group = await self.execute(sql, group_id, telegram_id, fetchrow=True)
         if not group:
             sql_select = "SELECT * FROM groups WHERE group_ = $1"
@@ -162,8 +163,11 @@ class Database:
         await self.execute("DROP TABLE groups CASCADE", execute=True)
 
     # =========================== TABLE | STATUS_GROUPS ===========================
+    # Ushbu jadval botni guruhda ishlashiga cheklov qo'yish uchun ishlatiladi, agar guruh id siga False
+    # berilgan bo'lsa, bot o'sha guruhda ishlamaydi!!!
     async def add_status_group(self, group_id):
-        sql = "INSERT INTO status_groups (group_id) VALUES ($1) ON CONFLICT (group_id) DO NOTHING"
+        sql = ("INSERT INTO status_groups (group_id) SELECT $1 "
+               "WHERE NOT EXISTS (SELECT 1 FROM status_groups WHERE group_id = $1)")
         return await self.execute(sql, group_id, fetchrow=True)
 
     async def update_group_on_status(self, status, group_id):
@@ -179,9 +183,10 @@ class Database:
     async def drop_table_status_groups(self):
         await self.execute("DROP TABLE status_groups", execute=True)
 
-    # =========================== TABLE | SEND_STATUS ===========================
+    # =========================== TABLE | SEND_STATUS | BOT ADMINKASI UCHUN ===========================
     async def add_send_status(self):
-        sql = "INSERT INTO send_status (send_post) VALUES (false) ON CONFLICT (send_post) DO NOTHING"
+        sql = ("INSERT INTO send_status (send_post) SELECT false "
+               "WHERE NOT EXISTS (SELECT 1 FROM send_status WHERE send_post = false)")
         return await self.execute(sql, fetchrow=True)
 
     async def update_send_status(self, send_post):
@@ -200,7 +205,8 @@ class Database:
 
     # =========================== TABLE | REFERRAL ===========================
     async def add_referral(self, name):
-        sql = "INSERT INTO referrals (name) VALUES ($1)"
+        sql = ("INSERT INTO referrals (name) SELECT $1 "
+               "WHERE NOT EXISTS (SELECT 1 FROM referrals WHERE name = $1)")
         return await self.execute(sql, name, fetchrow=True)
 
     async def add_user_referral(self, name, user_id):
@@ -216,9 +222,9 @@ class Database:
                "total_amount FROM referrals GROUP BY name) agg ON r.name = agg.name WHERE r.id = $1")
         return await self.execute(sql, id_, fetchrow=True)
 
-    async def get_today_referrals(self):
-        sql = ("SELECT name, SUM(amount) AS total_invites FROM referrals WHERE created_at = CURRENT_DATE GROUP BY name "
-               "ORDER BY MIN(id)")
+    async def get_yesterday_referrals(self):
+        sql = ("SELECT name, SUM(amount) AS total_invites FROM referrals "
+               "WHERE created_at = CURRENT_DATE - INTERVAL '1 day' GROUP BY name ORDER BY MIN(id)")
         return await self.execute(sql, fetch=True)
 
     async def get_all_referrals(self):

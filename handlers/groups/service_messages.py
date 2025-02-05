@@ -35,6 +35,22 @@ async def restrict_message(message: types.Message, member_names: list, group: li
     return msg
 
 
+@dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
+async def banned_member(message: types.Message):
+    try:
+        await message.delete()
+
+    except BotKicked:
+        await bot.send_message(
+            chat_id=ADMINS[0],
+            text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
+        )
+        await db.delete_group(group_id=message.chat.id)
+
+    except Exception as err:
+        await logging_text(err)
+
+
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
@@ -118,22 +134,6 @@ async def handle_new_chat_members(message: types.Message):
         await message.delete()
         await asyncio.sleep(5)
         await message.chat.delete_message(msg.message_id)
-
-    except Exception as err:
-        await logging_text(err)
-
-
-@dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
-async def banned_member(message: types.Message):
-    try:
-        await message.delete()
-
-    except BotKicked:
-        await bot.send_message(
-            chat_id=ADMINS[0],
-            text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
-        )
-        await db.delete_group(group_id=message.chat.id)
 
     except Exception as err:
         await logging_text(err)

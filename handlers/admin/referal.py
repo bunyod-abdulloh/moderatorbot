@@ -170,7 +170,7 @@ async def today_referrals_count(message: types.Message):
         await message.answer("Havolalar mavjud emas!")
         return
 
-    count_invites = await db.get_today_referrals()
+    count_invites = await db.get_yesterday_referrals()
     total_invites = ""
 
     for invite in count_invites:

@@ -64,6 +64,7 @@ async def paginate_groups(call: types.CallbackQuery, current_page: int, next_pag
 async def handle_group_info_(group_id, call: types.CallbackQuery):
     group_info = await get_group_info(group_id)
     join_info = await db.get_group_on_status(group_id)
+    print(group_id)
     user = await bot.get_chat_member(group_id, join_info['user_id'])
     bot_status = (await bot.get_chat_member(group_id, BOT_ID)).status
 
