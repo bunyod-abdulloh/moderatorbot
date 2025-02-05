@@ -43,18 +43,12 @@ class IsGroupAndBotAdmin(BoundFilter):
         return chat_member.is_chat_creator() or chat_member.is_chat_admin()
 
 
-class IsGroupAndForwardedFromAnotherChat(BoundFilter):
-    """Guruhda forward qilingan rasmlarni o'chirish, boshqa guruh yoki kanaldan forward qilingan xabarni aniqlash."""
+class IsGroupAndForwarded(BoundFilter):
+    """Guruhda forward qilingan xabarlarni aniqlash."""
 
     async def check(self, message: types.Message) -> bool:
+        # Xabar forward qilingan bo‘lsa, true qaytarish
+        if message.forward_from_chat or message.forward_from or message.forward_sender_name:
+            return True
 
-        # Xabarda rasm borligini tekshirish
-        if not any([message.audio, message.document, message.photo, message.video, message.voice]):
-            return False
-
-        # Xabar forward qilinganmi yoki yo'qligini tekshirish
-        if message.forward_from_chat:
-            # Agar forward qilingan chat turi guruh yoki kanal bo'lsa, o'chirib yuboramiz
-            if message.forward_from_chat.type in ['group', 'supergroup', 'channel']:
-                return True  # Xabarni o'chirish kerak
-        return False  # Forward qilinmagan yoki boshqa manbadan bo'lmagan rasm
+        return False

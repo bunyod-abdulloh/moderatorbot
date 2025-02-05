@@ -2,7 +2,7 @@ import re
 from typing import List
 
 from aiogram import types
-from filters.group_chat import IsGroupAndBotAdmin, IsGroupAndForwardedFromAnotherChat, IsGroupAdminOrOwner
+from filters.group_chat import IsGroupAndBotAdmin, IsGroupAdminOrOwner, IsGroupAndForwarded
 
 from loader import dp, bot
 
@@ -14,27 +14,33 @@ async def handle_non_admin_message(message: types.Message):
     if await IsGroupAdminOrOwner().check(message):
         return
 
-    if await IsGroupAndForwardedFromAnotherChat().check(message):
+    if await IsGroupAndForwarded().check(message):
         return
 
     # Xabarni o'chirish
     await message.delete()
 
 
-@dp.message_handler(IsGroupAndBotAdmin(), regexp=PHONE_REGEX, content_types=types.ContentTypes.ANY)
-async def get_phone_numbers(message: types.Message):
+@dp.message_handler(IsGroupAndBotAdmin(), IsGroupAndForwarded(), regexp=PHONE_REGEX, content_types=types.ContentTypes.ANY)
+async def get_forward_phone_numbers(message: types.Message):
     if await IsGroupAdminOrOwner().check(message):
         return
-    else:
-        if message.forward_from_chat:
-            # Regex `regexp` orqali tekshirildi, endi natijani qaytaramiz
-            if message.caption:
-                match = re.search(PHONE_REGEX, message.caption)
-            else:
-                match = re.search(PHONE_REGEX, message.text)
 
-            if match:
-                await message.delete()
+    # Forward qilingan chat boshqa chatdan bo‘lsa, o‘chirish
+    if message.forward_from_chat and message.forward_from_chat.id != message.chat.id:
+        await message.delete()
+        return
+
+    # Forward qilingan foydalanuvchi ismi mavjud bo‘lsa, o‘chirish
+    if message.forward_sender_name:
+        await message.delete()
+        return
+
+    # Forward qilingan foydalanuvchi admin yoki creator bo‘lmasa, o‘chirish
+    if message.forward_from:
+        member = await message.chat.get_member(message.forward_from.id)
+        if member.status not in ['administrator', 'creator']:
+            await message.delete()
 
 
 @dp.message_handler(IsGroupAndBotAdmin(), is_media_group=True, content_types=types.ContentTypes.ANY)

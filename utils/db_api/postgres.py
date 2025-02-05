@@ -128,7 +128,7 @@ class Database:
     # =========================== TABLE | GROUPS ===========================
     async def add_group(self, group_id, telegram_id):
         """ Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya """
-        sql = " INSERT INTO groups(group_, user_id) VALUES($1, $2) returning id"
+        sql = " INSERT INTO groups(group_, user_id) VALUES($1, $2) ON CONFLICT (group_) DO NOTHING returning id"
         group = await self.execute(sql, group_id, telegram_id, fetchrow=True)
         if not group:
             sql_select = "SELECT * FROM groups WHERE group_ = $1"
