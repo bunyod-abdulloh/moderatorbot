@@ -15,6 +15,9 @@ async def bekor_command(message: types.Message, state: FSMContext):
     await message.answer(text="Jarayon bekor qilindi!", reply_markup=user_main_dbuttons)
 
 
+
+
+
 @dp.message_handler(CommandStart(), state="*")
 async def bot_start(message: types.Message, state: FSMContext):
     text = (f"Salom, {message.from_user.full_name}!\n\n"
