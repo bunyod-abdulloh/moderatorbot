@@ -47,21 +47,21 @@ class Database:
                 id SERIAL PRIMARY KEY,
                 group_ BIGINT NOT NULL UNIQUE,
                 user_id BIGINT NOT NULL,
-                users INTEGER DEFAULT 0                
+                users INTEGER DEFAULT 0,
+                created_at DATE DEFAULT CURRENT_DATE                
             );
             """,
             """
             CREATE TABLE IF NOT EXISTS count_users (
                 group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,                
-                inviter_id BIGINT NOT NULL UNIQUE,
-                quantity INTEGER DEFAULT 0
+                inviter_id BIGINT NOT NULL,
+                quantity INTEGER DEFAULT 0,
+                PRIMARY KEY (group_id, inviter_id)
             );
             """,
             """
-            CREATE TABLE IF NOT EXISTS status_groups (                
-                created_at DATE DEFAULT CURRENT_DATE,                
-                group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE, 
-                on_status BOOLEAN DEFAULT TRUE                
+            CREATE TABLE IF NOT EXISTS blacklist (                                
+                group_id BIGINT PRIMARY KEY                                
             );
             """,
             """
@@ -128,13 +128,9 @@ class Database:
 
     # =========================== TABLE | GROUPS ===========================
     async def add_group(self, group_id, telegram_id):
-        """ Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya """
-        sql = "INSERT INTO groups(group_, user_id) VALUES($1, $2) ON CONFLICT (group_) DO NOTHING returning id"
-        group = await self.execute(sql, group_id, telegram_id, fetchrow=True)
-        if not group:
-            sql_select = "SELECT * FROM groups WHERE group_ = $1"
-            group = await self.execute(sql_select, group_id, fetchrow=True)
-        return group
+        """Groups jadvaliga yangi ma'lumotlar qo'shuvchi funksiya"""
+        sql = "INSERT INTO groups(group_, user_id) VALUES($1, $2) ON CONFLICT (group_) DO NOTHING"
+        await self.execute(sql, group_id, telegram_id, execute=True)
 
     async def update_add_user(self, users, group_id):
         sql = "UPDATE groups SET users = $1 WHERE group_ = $2"
@@ -165,23 +161,19 @@ class Database:
     # =========================== TABLE | STATUS_GROUPS ===========================
     # Ushbu jadval botni guruhda ishlashiga cheklov qo'yish uchun ishlatiladi, agar guruh id siga False
     # berilgan bo'lsa, bot o'sha guruhda ishlamaydi!!!
-    async def add_status_group(self, group_id):
-        sql = ("INSERT INTO status_groups (group_id) SELECT $1 "
-               "WHERE NOT EXISTS (SELECT 1 FROM status_groups WHERE group_id = $1)")
+    async def add_group_to_blacklist(self, group_id):
+        sql = "INSERT INTO blacklist (group_id) VALUES($1) ON CONFLICT (group_id) DO NOTHING"
         return await self.execute(sql, group_id, fetchrow=True)
 
-    async def update_group_on_status(self, status, group_id):
-        sql = "UPDATE status_groups SET on_status = $1 WHERE group_id = $2"
-        return await self.execute(sql, status, group_id, execute=True)
+    async def get_group_by_blacklist(self, group_id):
+        sql = "SELECT NOT EXISTS(SELECT 1 FROM blacklist WHERE group_id = $1)"
+        return await self.execute(sql, group_id, fetchval=True)
 
-    async def get_group_on_status(self, group_id):
-        query = (
-            "SELECT sg.group_id, sg.created_at, sg.on_status, g.user_id, g.group_ AS "
-            "group_identifier FROM status_groups sg JOIN groups g ON sg.group_id = g.id WHERE g.group_ = $1")
-        return await self.execute(query, group_id, fetchrow=True)
+    async def delete_group_from_blacklist(self, group_id):
+        await self.execute("DELETE FROM blacklist WHERE group_id=$1", group_id, execute=True)
 
     async def drop_table_status_groups(self):
-        await self.execute("DROP TABLE status_groups", execute=True)
+        await self.execute("DROP TABLE blacklist", execute=True)
 
     # =========================== TABLE | SEND_STATUS | BOT ADMINKASI UCHUN ===========================
     async def add_send_status(self):
@@ -200,22 +192,14 @@ class Database:
     async def drop_table_send_status(self):
         await self.execute("DROP TABLE send_status", execute=True)
 
-    async def delete_table_by_name(self, table_name, group_id):
-        await self.execute(f"DELETE FROM {table_name} WHERE group_id = $1", group_id, fetchval=True)
-
     # =========================== TABLE | REFERRAL ===========================
     async def add_referral(self, name):
-        sql = ("INSERT INTO referrals (name) SELECT $1 "
-               "WHERE NOT EXISTS (SELECT 1 FROM referrals WHERE name = $1)")
-        return await self.execute(sql, name, fetchrow=True)
+        sql = "INSERT INTO referrals (name) SELECT $1::VARCHAR WHERE NOT EXISTS (SELECT 1 FROM referrals WHERE name = $1)"
+        return await self.execute(sql, name, execute=True)
 
     async def add_user_referral(self, name, user_id):
         sql = "INSERT INTO referrals (name, user_id, amount) VALUES ($1, $2, 1) ON CONFLICT (user_id) DO NOTHING"
         return await self.execute(sql, name, user_id, fetchrow=True)
-
-    async def update_referral(self, name):
-        sql = "UPDATE referrals SET amount = amount + 1, created_at = current_date WHERE name = $1"
-        return await self.execute(sql, name, execute=True)
 
     async def get_referral_by_id(self, id_):
         sql = ("SELECT r.*, agg.total_amount FROM referrals r LEFT JOIN (SELECT name, SUM(amount) AS "

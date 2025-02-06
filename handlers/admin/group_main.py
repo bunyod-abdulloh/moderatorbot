@@ -21,16 +21,6 @@ WARNING_TEXT = (
 
 
 # Yordamchi funksiyalar
-async def get_group_info(group_id: int) -> dict:
-    """Guruh haqida ma'lumot olish."""
-    chat = await bot.get_chat(chat_id=group_id)
-    return {
-        "name": chat.full_name,
-        "username": chat.username,
-        "member_count": await bot.get_chat_member_count(chat_id=group_id)
-    }
-
-
 async def handle_media_group(album: List[types.Message]) -> types.MediaGroup:
     """MediaGroup obyektini yaratish."""
     media_group = types.MediaGroup()
@@ -62,23 +52,24 @@ async def paginate_groups(call: types.CallbackQuery, current_page: int, next_pag
 
 
 async def handle_group_info_(group_id, call: types.CallbackQuery):
-    group_info = await get_group_info(group_id)
-    join_info = await db.get_group_on_status(group_id)
-    print(group_id)
-    user = await bot.get_chat_member(group_id, join_info['user_id'])
+    chat = await bot.get_chat(chat_id=group_id)
+    check_blacklist = await db.get_group_by_blacklist(group_id)
+    get_group_on_db = await db.get_group(group_id)
+
+    user = await bot.get_chat_member(group_id, get_group_on_db['user_id'])
     bot_status = (await bot.get_chat_member(group_id, BOT_ID)).status
 
     await call.message.edit_text(
         (
             f"Guruh ma'lumotlari\n\n"
-            f"Guruh nomi: {group_info['name']}\n"
-            f"Guruh username: @{group_info['username']}\n"
-            f"Foydalanuvchilar soni: {group_info['member_count']}\n"
+            f"Guruh nomi: {chat.full_name}\n"
+            f"Guruh username: @{chat.username}\n"
+            f"Foydalanuvchilar soni: {await bot.get_chat_member_count(group_id)}\n"
             f"Mas'ul: {user.user.full_name}\n"
             f"Username: @{user.user.username}\n"
             f"Status: {user.status.capitalize()}\n"
-            f"Bot guruhga qo'shilgan sana: {join_info['created_at']}\n"
-            f"Botni ushbu guruhda foydalanish holati: {join_info['on_status']}\n"
+            f"Bot guruhga qo'shilgan sana: {get_group_on_db['created_at']}\n"
+            f"Botni ushbu guruhda foydalanish holati: {check_blacklist}\n"
             f"Botni guruhdagi statusi: {bot_status.capitalize()}"
         ),
         reply_markup=group_button(group_id)
@@ -87,12 +78,14 @@ async def handle_group_info_(group_id, call: types.CallbackQuery):
 
 # Handlerlar
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar")
-async def groups_handler(message: types.Message):
+async def groups_handler(message: types.Message, state: FSMContext):
+    await state.finish()
     await message.answer(message.text, reply_markup=group_main_buttons)
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
-async def groups_info_handler(message: types.Message):
+async def groups_info_handler(message: types.Message, state: FSMContext):
+    await state.finish()
     all_groups = await db.get_groups()
     if not all_groups:
         await message.answer("Guruhlar mavjud emas!")

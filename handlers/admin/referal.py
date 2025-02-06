@@ -11,15 +11,6 @@ from utils.user_functions import extracter
 
 
 async def paginate_referrals(call: types.CallbackQuery, current_page: int, next_page=False, prev_page=False):
-    """
-    Helper function to paginate referrals and show next/previous pages.
-
-    Args:
-        call (types.CallbackQuery): The callback query object containing the user's interaction.
-        current_page (int): The current page number.
-        next_page (bool, optional): Flag indicating whether to go to the next page. Defaults to False.
-        prev_page (bool, optional): Flag indicating whether to go to the previous page. Defaults to False.
-    """
     all_groups = await db.get_all_referrals()
     extract = extracter(all_datas=all_groups, delimiter=10)
     total_pages = len(extract)
@@ -111,7 +102,7 @@ async def get_referral_handler(call: types.CallbackQuery):
     referral_id = int(call.data.split("_")[1])
     referral = await db.get_referral_by_id(referral_id)
     bot_username = (await bot.me).username
-    print(referral)
+
     ref_name = f"https://t.me/{bot_username}?start={referral['name']}"
     await call.message.edit_text(
         text=f"Havola nomi: {ref_name}\n"
@@ -123,16 +114,6 @@ async def get_referral_handler(call: types.CallbackQuery):
 
 @dp.callback_query_handler(F.data.startswith("ref:del_"))
 async def delete_referrals_handler(call: types.CallbackQuery):
-    """
-    Handler to delete a referral when the admin clicks the delete button.
-
-    This handler is triggered when the admin clicks the delete button associated with a specific referral.
-    It extracts the referral ID from the callback data, deletes the corresponding referral from the database,
-    and then returns to the main referral page. A confirmation message is sent to the admin with an alert.
-
-    Args:
-        call (types.CallbackQuery): The callback query object containing the user's interaction.
-    """
     # Extract referral ID from callback data
     referral_id = int(call.data.split("_")[1])
 
@@ -153,27 +134,33 @@ async def back_to_ref_main_handler(call: types.CallbackQuery):
     """
     referrals = await db.get_all_referrals()
 
-    extract = extracter(referrals, 10)
-    markup = await view_referrals_ibutton(extract[0], current_page=1, all_pages=len(extract))
-    await call.message.edit_text(
-        text="Havolalar bosh sahifasi", reply_markup=markup
-    )
+    if referrals:
+        extract = extracter(referrals, 10)
+        markup = await view_referrals_ibutton(extract[0], current_page=1, all_pages=len(extract))
+        await call.message.edit_text(
+            text="Havolalar bosh sahifasi", reply_markup=markup
+        )
+    else:
+        await call.message.delete()
+        await call.message.answer(
+            text="Havolalar bosh sahifasi", reply_markup=referrals_buttons
+        )
 
 
-@dp.message_handler(IsBotAdminFilter(), F.text == "Bugungi takliflar soni")
-async def today_referrals_count(message: types.Message):
+@dp.message_handler(IsBotAdminFilter(), F.text == "Kechagi takliflar soni")
+async def today_referrals_count(message: types.Message, state: FSMContext):
     """
-    Handler to display the count of today's referrals.
+    Handler to display the count of yesterday's referrals.
     """
-    referrals = await db.get_all_referrals()
-    if not referrals:
-        await message.answer("Havolalar mavjud emas!")
+    await state.finish()
+    count_invites = await db.get_yesterday_referrals()
+    if not count_invites:
+        await message.answer("Hisobot mavjud emas!")
         return
 
-    count_invites = await db.get_yesterday_referrals()
     total_invites = ""
 
     for invite in count_invites:
         total_invites += f"{invite['name']}: {invite['total_invites']}\n"
 
-    await message.answer(text=f"Bugungi takliflar:\n\n{total_invites}", reply_markup=back_to_ref_main())
+    await message.answer(text=f"Kechagi takliflar:\n\n{total_invites}", reply_markup=back_to_ref_main())

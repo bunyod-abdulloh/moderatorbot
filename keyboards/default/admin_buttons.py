@@ -39,7 +39,7 @@ group_main_buttons = create_keyboard([
 
 referrals_buttons = create_keyboard([
     ["➕ Qo'shish", "🔎 Barchasini ko'rish"],
-    ["Bugungi takliflar soni"],
+    ["Kechagi takliflar soni"],
     ["🔙 Ortga"]
 ]
 )

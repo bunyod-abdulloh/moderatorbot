@@ -10,7 +10,8 @@ from utils.user_functions import cancel_text
 
 
 @dp.message_handler(F.text == "📱 Admin bilan aloqa")
-async def call_with_admin_callback(message: types.Message):
+async def call_with_admin_callback(message: types.Message, state: FSMContext):
+    await state.finish()
     await message.answer(
         f"Xabaringizni yuborishdan oldin yaxshilab tekshirib oling, yuborish tugmasini bosishingiz bilan "
         f"xabar adminga yuboriladi.\n{cancel_text}\n\nXabaringizni kiriting:")

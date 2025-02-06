@@ -18,16 +18,6 @@ def get_restrict_permissions(can_send: bool):
     )
 
 
-async def check_bot_status(message: types.Message):
-    bot_ = await db.get_group_on_status(message.chat.id)
-
-    if bot_ and not bot_['on_status']:
-        await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
-        await bot.leave_chat(message.chat.id)
-        return False
-    return True
-
-
 async def restrict_message(message: types.Message, member_names: list, group: list):
     msg = await message.answer(
         text=f"Xush kelibsiz, {', '.join(member_names)}!\n\nGuruhda yozish uchun {group['users']} ta "
@@ -54,15 +44,12 @@ async def banned_member(message: types.Message):
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
-        check_bot = await db.get_group(message.chat.id)
+        check_blacklist = await db.get_group_by_blacklist(message.chat.id)
 
-        if check_bot:
-            bot_ = await db.get_group_on_status(message.chat.id)
-
-            if bot_ and bot_['on_status'] == False:
-                await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
-                await bot.leave_chat(message.chat.id)
-                return False
+        if not check_blacklist:  # Agar check_blacklist False bo'lsa
+            await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
+            await bot.leave_chat(message.chat.id)
+            return
 
         member_names = [member.first_name for member in message.new_chat_members]
         group = await db.get_group(message.chat.id)
@@ -72,10 +59,7 @@ async def new_member_admin(message: types.Message):
                     chat_id=ADMINS[0],
                     text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhiga qo'shildi!"
                 )
-                id_ = await db.add_group(telegram_id=message.from_user.id, group_id=message.chat.id)
-
-                await db.add_status_group(id_['id'])
-                await db.add_send_status()
+                await db.add_group(telegram_id=message.from_user.id, group_id=message.chat.id)
             else:
                 if group and group['users'] > 0:
                     await message.chat.restrict(user_id=member.id, permissions=get_restrict_permissions(False))
@@ -90,7 +74,7 @@ async def new_member_admin(message: types.Message):
 
     except MessageCantBeDeleted:
         await message.answer(
-            text="Bot guruhga admin qilinmaganligi sababli foydalanuvchi guruhga qo'shilganligi haqidagi habarni "
+            text="Bot guruhga admin qilinmaganligi sababli foydalanuvchi guruhga qo'shilganligi haqidagi xabarni "
                  "o'chirmadi!\n\nBot to'g'ri ishlashi uchun botni guruhga admin qilishingiz lozim!"
         )
 

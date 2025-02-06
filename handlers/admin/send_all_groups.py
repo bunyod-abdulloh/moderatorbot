@@ -15,22 +15,22 @@ from states.admin import AdminStates
 
 async def send_to_groups(message: types.Message, groups: List[dict], media_group: types.MediaGroup = None):
     """
-    Guruhlarga xabar yoki media-guruh yuborish.
+    Guruhlarga oddiy xabar yoki media xabar yuborish.
     """
     success_count, failed_count = 0, 0
 
     for group in groups:
         try:
             if media_group:
-                await bot.send_media_group(chat_id=group['group_id'], media=media_group)
+                await bot.send_media_group(chat_id=group['group_'], media=media_group)
             else:
-                await message.copy_to(chat_id=group['group_id'])
+                await message.copy_to(chat_id=group['group_'])
             success_count += 1
         except BotKicked:
             failed_count += 1
-            await db.delete_group(group['group_id'])
+            await db.delete_group(group['group_'])
         except Exception as err:
-            await message.answer(text=f"Error: {err}\nGroup ID: {group['group_id']}")
+            await message.answer(text=f"Error: {err}\nGroup ID: {group['group_']}")
         if success_count % 1500 == 0:
             await asyncio.sleep(30)
         await asyncio.sleep(0.05)
@@ -38,7 +38,8 @@ async def send_to_groups(message: types.Message, groups: List[dict], media_group
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "🧑‍💻 Oddiy habar yuborish")
-async def handle_send_to_groups(message: types.Message):
+async def handle_send_to_groups(message: types.Message, state: FSMContext):
+    await state.finish()
     send_status = await db.get_send_status()
     if send_status is True:
         await message.answer("Xabar yuborish jarayoni yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")
@@ -63,7 +64,8 @@ async def handle_send_to_groups_two(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "🖇 Mediagroup habar yuborish")
-async def handle_send_media_to_groups(message: types.Message):
+async def handle_send_media_to_groups(message: types.Message, state: FSMContext):
+    await state.finish()
     send_status = await db.get_send_status()
     if send_status is True:
         await message.answer("Xabar yuborish jarayoni yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")

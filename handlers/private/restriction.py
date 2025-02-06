@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.dispatcher import FSMContext
 from aiogram.types import ChatPermissions
 from aiogram.utils.exceptions import BadRequest
 from magic_filter import F
@@ -12,7 +13,8 @@ from utils.user_functions import extracter
 
 # Guruh uchun cheklovlar menyusi
 @dp.message_handler(F.text == "✍️ Guruhda xabarlarni cheklash")
-async def restrict_messages_main(message: types.Message):
+async def restrict_messages_main(message: types.Message, state: FSMContext):
+    await state.finish()
     user_groups = await db.get_group_by_user(telegram_id=message.from_user.id)
 
     if user_groups:

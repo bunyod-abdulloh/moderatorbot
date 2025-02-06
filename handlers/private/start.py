@@ -17,6 +17,7 @@ async def bekor_command(message: types.Message, state: FSMContext):
 
 @dp.message_handler(CommandStart(), state="*")
 async def bot_start(message: types.Message, state: FSMContext):
+    await state.finish()
     text = (f"Salom, {message.from_user.full_name}!\n\n"
             f"Buyruqlar"
             f"\n\n/start - Botni ishga tushirish"
@@ -42,7 +43,6 @@ async def bot_start(message: types.Message, state: FSMContext):
         await db.add_user(message.from_user.id)
     except Exception as err:
         await logging_text(err)
-    await state.finish()
 
 
 @dp.message_handler(F.text == "Bosh sahifa")

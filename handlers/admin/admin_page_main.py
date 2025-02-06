@@ -15,5 +15,5 @@ async def admin_main_page(message: types.Message):
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "🔙 Ortga", state="*")
 async def back_to_main_page(message: types.Message, state: FSMContext):
-    await message.answer(text="Admin bosh sahifasi!", reply_markup=admin_main_buttons)
     await state.finish()
+    await message.answer(text="Admin bosh sahifasi!", reply_markup=admin_main_buttons)
