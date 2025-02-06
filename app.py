@@ -11,7 +11,6 @@ async def on_startup(dispatcher):
     await on_startup_notify(dispatcher)
     await db.create()
     await db.create_tables()
-    await db.add_send_status()
 
 
 if __name__ == '__main__':
