@@ -93,26 +93,29 @@ async def handle_new_chat_members(message: types.Message):
             await message.chat.restrict(inviter_id, permissions=get_restrict_permissions(False))
             msg = await restrict_message(message, member_names, group)
         else:
-            if group['users'] > 0:
-                user_data = await db.count_users_inviter(inviter_id)
-                for member in message.new_chat_members:
-                    if member.is_bot:
-                        await message.chat.kick(user_id=member.id)
+            msg = str()
+            if group:
+                if group['users'] > 0:
+                    user_data = await db.count_users_inviter(inviter_id)
+                    for member in message.new_chat_members:
+                        if member.is_bot:
+                            await message.chat.kick(user_id=member.id)
+                        else:
+                            await message.chat.restrict(member.id, permissions=get_restrict_permissions(False))
+
+                    if user_data is None:
+                        quantity = await db.add_user_to_count_users(group_id=group['id'], inviter_id=inviter_id,
+                                                                    quantity=len(message.new_chat_members))
+
                     else:
-                        await message.chat.restrict(member.id, permissions=get_restrict_permissions(False))
+                        quantity = await db.update_quantity(quantity=len(message.new_chat_members),
+                                                            inviter_id=inviter_id,
+                                                            group_id=group['id'])
 
-                if user_data is None:
-                    quantity = await db.add_user_to_count_users(group_id=group['id'], inviter_id=inviter_id,
-                                                                quantity=len(message.new_chat_members))
-
-                else:
-                    quantity = await db.update_quantity(quantity=len(message.new_chat_members), inviter_id=inviter_id,
-                                                        group_id=group['id'])
-
-                if quantity >= group['users']:
-                    await message.chat.restrict(user_id=inviter_id, permissions=get_restrict_permissions(True))
-                    await db.delete_from_count_user(inviter_id=inviter_id)
-                msg = await restrict_message(message, member_names, group)
+                    if quantity >= group['users']:
+                        await message.chat.restrict(user_id=inviter_id, permissions=get_restrict_permissions(True))
+                        await db.delete_from_count_user(inviter_id=inviter_id)
+                    msg = await restrict_message(message, member_names, group)
             else:
                 msg = await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
         await message.delete()
