@@ -18,16 +18,17 @@ class IsGroupAdminOrOwner(BoundFilter):
 class IsGroupAndBotAdmin(BoundFilter):
     async def check(self, message: types.Message) -> bool:
         if message.chat.type not in chat_types:
-            return False
+            return False  # Guruh bo‘lmasa, rad etamiz
 
         bot_id = (await bot.me).id
 
         try:
-            # Botning admin ekanligini tekshirish
+            # Botning admin ekanligini tekshirish (public yoki private farqi yo‘q)
             chat_member = await bot.get_chat_member(message.chat.id, bot_id)
             return chat_member.is_chat_creator() or chat_member.is_chat_admin()
+
         except BotKicked:
-            await db.delete_group(message.chat.id)
+            await db.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
             return False
 
 
