@@ -1,7 +1,7 @@
 from aiogram import types
 from aiogram.dispatcher.filters import BoundFilter
 
-from aiogram.utils.exceptions import BotKicked
+from aiogram.utils.exceptions import BotKicked, Unauthorized
 
 from loader import bot, db
 
@@ -30,6 +30,9 @@ class IsGroupAndBotAdmin(BoundFilter):
         except BotKicked:
             await db.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
             return False
+        except Unauthorized:
+            await db.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
+            return False
 
 
 class IsGroupAdminAndForwarded(BoundFilter):
@@ -51,4 +54,6 @@ class IsGroupAdminAndForwarded(BoundFilter):
             # Xabar forward qilinganligini tekshirish
             return bool(message.forward_from_chat or message.forward_from or message.forward_sender_name)
         except BotKicked:
+            pass
+        except Unauthorized:
             pass

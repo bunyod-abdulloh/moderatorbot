@@ -1,7 +1,7 @@
 from typing import List
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.utils.exceptions import BotKicked, MigrateToChat
+from aiogram.utils.exceptions import BotKicked, MigrateToChat, Unauthorized
 from magic_filter import F
 
 from data.config import BOT_ID
@@ -92,6 +92,7 @@ async def groups_info_handler(message: types.Message, state: FSMContext):
         return
 
     extract = extracter(all_datas=all_groups, delimiter=10)
+
     markup = await view_groups_ibutton(extract[0], current_page=1, all_pages=len(extract))
     await message.answer("Kerakli guruh tugmasiga bosing", reply_markup=markup)
 

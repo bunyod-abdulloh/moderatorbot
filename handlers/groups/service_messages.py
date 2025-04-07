@@ -88,7 +88,7 @@ async def handle_new_chat_members(message: types.Message):
         group = await db.get_group(message.chat.id)
         inviter_id = message.from_user.id
         member_names = [member.first_name for member in message.new_chat_members if not member.is_bot]
-        msg = str()
+
         if group:
             if message.new_chat_members[0].id == inviter_id and group['users'] > 0:
                 await message.chat.restrict(inviter_id, permissions=get_restrict_permissions(False))
@@ -115,13 +115,12 @@ async def handle_new_chat_members(message: types.Message):
                         await message.chat.restrict(user_id=inviter_id, permissions=get_restrict_permissions(True))
                         await db.delete_from_count_user(inviter_id=inviter_id)
                     msg = await restrict_message(message, member_names, group)
-        else:
-            msg = await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
+                else:
+                    msg = await message.answer(f"Xush kelibsiz, {', '.join(member_names)}!", parse_mode="HTML")
 
-
-        await message.delete()
-        await asyncio.sleep(5)
-        await message.chat.delete_message(msg.message_id)
+            await message.delete()
+            await asyncio.sleep(5)
+            await message.chat.delete_message(msg.message_id)
 
     except Exception as err:
         await logging_text(err)

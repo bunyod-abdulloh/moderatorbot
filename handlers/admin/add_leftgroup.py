@@ -13,7 +13,7 @@ from states.admin import AdminStates
 async def handle_leftbot(call: types.CallbackQuery):
     action, group_id = call.data.split(":")
     group_id = int(group_id)
-    await bot.leave_chat(group_id)
+
     group_name = (await bot.get_chat(group_id)).full_name
 
     if action == "restrictbot":
@@ -29,6 +29,7 @@ async def handle_leftbot(call: types.CallbackQuery):
         await db.delete_group_from_blacklist(group_id)
         await call.message.edit_text(
             text=f"Bot {group_name} guruhidan chiqarildi va guruh ma'lumotlari ma'lumotlar omboridan o'chirildi!")
+    await bot.leave_chat(group_id)
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "Botni guruhga qo'shish")

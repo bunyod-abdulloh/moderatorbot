@@ -8,7 +8,7 @@ from data.config import ADMIN_GROUP_ID
 
 async def on_startup_notify(dp: Dispatcher):
     try:
-        await dp.bot.send_message(ADMIN_GROUP_ID, "Bot ishga tushdi")
+        await dp.bot.send_message(1041847396, "Bot ishga tushdi")
 
     except Exception as err:
         logging.error(f"Xatolik: {err}")
