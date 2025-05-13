@@ -3,6 +3,7 @@ from aiogram.dispatcher import FSMContext
 from magic_filter import F
 
 from loader import dp, bot
+from services.error_service import notify_exception_to_admin
 from states.user import UserStates
 
 
@@ -27,5 +28,5 @@ async def send_message_to_user_handler(message: types.Message, state: FSMContext
         )
         await message.answer("Javobingiz yuborildi!")
         await state.finish()
-    except Exception as e:
-        await message.answer(f"Xatolik: {str(e)}")
+    except Exception as err:
+        await notify_exception_to_admin(err=err)

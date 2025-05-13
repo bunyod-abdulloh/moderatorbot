@@ -1,4 +1,2 @@
-from . import start
-from . import add_user_to_group
+from . import a_start
 from . import call_with_admin
-from . import restriction

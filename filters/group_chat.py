@@ -28,10 +28,10 @@ class IsGroupAndBotAdmin(BoundFilter):
             return chat_member.is_chat_creator() or chat_member.is_chat_admin()
 
         except BotKicked:
-            await db.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
+            await grpdb.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
             return False
         except Unauthorized:
-            await db.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
+            await grpdb.delete_group(message.chat.id)  # Bot guruhdan chiqarilgan bo‘lsa, bazadan o‘chirish
             return False
 
 

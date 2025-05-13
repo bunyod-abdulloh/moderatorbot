@@ -6,9 +6,8 @@ from magic_filter import F
 
 from filters.admins import IsBotAdminFilter
 from handlers.admin.group_main import WARNING_TEXT
-
 from keyboards.default.admin_buttons import bot_main_buttons
-from loader import dp, db
+from loader import dp, udb, admdb
 from states.admin import AdminStates
 from utils.db_functions import send_message_to_users, send_media_group_to_users
 
@@ -22,14 +21,14 @@ async def bot_main_page(message: types.Message, state: FSMContext):
 @dp.message_handler(IsBotAdminFilter(), F.text == "Foydalanuvchilar soni")
 async def user_count(message: types.Message, state: FSMContext):
     await state.finish()
-    count = await db.count_users()
+    count = await udb.count_users()
     await message.answer(f"Foydalanuvchilar soni: {count}")
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "✅ Oddiy post yuborish")
 async def send_to_bot_users(message: types.Message, state: FSMContext):
     await state.finish()
-    send_status = await db.get_send_status()
+    send_status = await admdb.get_send_status()
     if send_status is True:
         await message.answer("Xabar yuborish jarayoni yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")
     else:
@@ -41,7 +40,7 @@ async def send_to_bot_users(message: types.Message, state: FSMContext):
 async def send_to_bot_users_two(message: types.Message, state: FSMContext):
     success_count, failed_count = await send_message_to_users(message)
 
-    await db.update_send_status(False)
+    await admdb.update_send_status(False)
     await message.answer(
         f"Habar {success_count} ta foydalanuvchiga yuborildi!\n{failed_count} ta foydalanuvchi botni bloklagan."
     )
@@ -51,7 +50,7 @@ async def send_to_bot_users_two(message: types.Message, state: FSMContext):
 @dp.message_handler(IsBotAdminFilter(), F.text == "🎞 Mediagroup post yuborish")
 async def send_media_to_bot(message: types.Message, state: FSMContext):
     await state.finish()
-    send_status = await db.get_send_status()
+    send_status = await admdb.get_send_status()
     if send_status is True:
         await message.answer("Xabar yuborish jaroyini yoqilgan! Hisobot kelganidan so'ng xabar yuborishingiz mumkin!")
     else:
@@ -75,7 +74,7 @@ async def send_media_to_bot_second(message: types.Message, album: List[types.Mes
 
     success_count, failed_count = await send_media_group_to_users(media_group)
 
-    await db.update_send_status(False)
+    await admdb.update_send_status(False)
     await message.answer(
         f"Media {success_count} ta foydalanuvchiga yuborildi!\n{failed_count} ta foydalanuvchi botni bloklagan."
     )

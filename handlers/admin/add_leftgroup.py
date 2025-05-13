@@ -1,11 +1,11 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.utils.exceptions import Unauthorized
-
 from magic_filter import F
 
 from filters.admins import IsBotAdminFilter
-from loader import dp, bot, db
+from loader import dp, bot, db, blstdb
+from services.error_service import notify_exception_to_admin
 from states.admin import AdminStates
 
 
@@ -18,15 +18,15 @@ async def handle_leftbot(call: types.CallbackQuery):
 
     if action == "restrictbot":
         try:
-            await db.add_group_to_blacklist(group_id)
+            await blstdb.add_group_to_blacklist(group_id)
         except Unauthorized:
             pass
 
         await call.message.edit_text(text=f"Bot {group_name} guruhidan chiqarildi va vaqtincha foydalanish cheklandi!")
 
     if action == "leftbot":
-        await db.delete_group(group_id)
-        await db.delete_group_from_blacklist(group_id)
+        await grpdb.delete_group(group_id)
+        await blstdb.delete_group_from_blacklist(group_id)
         await call.message.edit_text(
             text=f"Bot {group_name} guruhidan chiqarildi va guruh ma'lumotlari ma'lumotlar omboridan o'chirildi!")
     await bot.leave_chat(group_id)
@@ -48,7 +48,7 @@ async def handle_add_bot_to_group(message: types.Message, state: FSMContext):
         group_username = message.text.split("https://t.me/")[1]
         group = await bot.get_chat(f"@{group_username}")
 
-        await db.delete_group_from_blacklist(group.id)
+        await blstdb.delete_group_from_blacklist(group.id)
 
         await message.answer(f"{group.full_name} guruhi blocklanganlar ro'yxatidan chiqarildi!")
         group_admin = await bot.get_chat_administrators(group.id)
@@ -63,6 +63,6 @@ async def handle_add_bot_to_group(message: types.Message, state: FSMContext):
                 )
             except Exception as err:
                 await message.answer(f"{err}\nAdmin: {admin.user.full_name}\nUsername: @{admin.user.username}")
-    except Exception as e:
-        await message.answer(text=f"Xatolik: {e}")
+    except Exception as err:
+        await notify_exception_to_admin(err=err)
         return

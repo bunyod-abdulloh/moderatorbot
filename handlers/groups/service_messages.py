@@ -5,7 +5,7 @@ from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked
 
 from data.config import ADMINS, BOT_ID
 from filters.group_chat import IsGroupAdminOrOwner, IsGroupAndBotAdmin
-from loader import dp, bot, db
+from loader import dp, bot, grpdb
 from services.error_service import notify_exception_to_admin
 
 
@@ -18,7 +18,7 @@ async def banned_member(message: types.Message):
             chat_id=ADMINS[0],
             text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhidan chiqarildi!"
         )
-        await db.delete_group(group_id=message.chat.id)
+        await grpdb.delete_group(group_id=message.chat.id)
 
     except Exception as err:
         await notify_exception_to_admin(err=err)
@@ -28,21 +28,25 @@ async def banned_member(message: types.Message):
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
-        if not await db.get_group_by_blacklist(message.chat.id):
+        if not await grpdb.get_group_by_blacklist(message.chat.id):
             await message.answer(
                 "Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!"
             )
             await bot.leave_chat(message.chat.id)
             return
 
-        # Xush kelibsizlar uchun ismlar
-        member_names = [m.full_name for m in message.new_chat_members if not m.is_bot]
+        # Foydalanuvchilar ro‘yxati: bosilsa profiliga o‘tadi
+        member_names = [
+            f'<a href="tg://user?id={m.id}">{m.full_name}</a>'
+            for m in message.new_chat_members
+            if not m.is_bot
+        ]
 
         # Bot o‘zi qo‘shilganini aniqlash
         is_bot_added = any(m.id == BOT_ID for m in message.new_chat_members)
 
         if is_bot_added:
-            await db.add_group(
+            await grpdb.add_group(
                 telegram_id=message.from_user.id,
                 group_id=message.chat.id
             )
@@ -51,6 +55,7 @@ async def new_member_admin(message: types.Message):
                 chat_id=ADMINS[0],
                 text=f"Sizning {bot_info.full_name} botingiz {message.chat.full_name} guruhiga qo'shildi!"
             )
+        await message.delete()
 
         if member_names:
             msg = await message.answer(
@@ -72,8 +77,12 @@ async def new_member_admin(message: types.Message):
 @dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def handle_new_chat_members(message: types.Message):
     try:
-        # Faqatgina foydalanuvchi bo‘lgan a'zolarning ismlari
-        member_names = [m.full_name for m in message.new_chat_members if not m.is_bot]
+        # Foydalanuvchilar ro‘yxati: bosilsa profiliga o‘tadi
+        member_names = [
+            f'<a href="tg://user?id={m.id}">{m.full_name}</a>'
+            for m in message.new_chat_members
+            if not m.is_bot
+        ]
 
         # Bot bo‘lsa — chiqazib yuboriladi
         for bot_member in filter(lambda m: m.is_bot, message.new_chat_members):

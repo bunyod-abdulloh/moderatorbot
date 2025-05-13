@@ -1,6 +1,6 @@
 import asyncio
-import re
 import datetime
+import re
 
 from aiogram import types
 from aiogram.dispatcher.filters import Command
@@ -8,7 +8,7 @@ from aiogram.utils.exceptions import BadRequest
 
 from filters import IsGroupAndBotAdmin, AdminFilter
 from loader import dp
-from utils.user_functions import logging_text
+from services.error_service import notify_exception_to_admin
 
 
 @dp.message_handler(IsGroupAndBotAdmin(), Command("ro", prefixes="!/"), AdminFilter())
@@ -39,7 +39,7 @@ async def read_only_mode(message: types.Message):
         await message.answer(f"Xatolik: {err}")
 
     except Exception as err:
-        await logging_text(err)
+        await notify_exception_to_admin(err=err)
 
 
 # Undo read-only mode

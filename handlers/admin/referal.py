@@ -5,13 +5,14 @@ from magic_filter import F
 from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import referrals_buttons
 from keyboards.inline.admin_ibuttons import view_referrals_ibutton, back_to_ref_main
-from loader import dp, db, bot
+from loader import dp, bot, refdb
+from services.error_service import notify_exception_to_admin
 from states.admin import AdminStates
 from utils.user_functions import extracter
 
 
 async def paginate_referrals(call: types.CallbackQuery, current_page: int, next_page=False, prev_page=False):
-    all_groups = await db.get_all_referrals()
+    all_groups = await refdb.get_all_referrals()
     extract = extracter(all_datas=all_groups, delimiter=10)
     total_pages = len(extract)
 
@@ -26,8 +27,8 @@ async def paginate_referrals(call: types.CallbackQuery, current_page: int, next_
     try:
         await call.answer(cache_time=0)
         await call.message.edit_text("Kerakli tugmani bosing", reply_markup=markup)
-    except Exception:
-        pass
+    except Exception as err:
+        await notify_exception_to_admin(err=err)
 
 
 @dp.message_handler(IsBotAdminFilter(), F.text == "⭐️ Havolalar", state="*")
@@ -57,7 +58,7 @@ async def add_referral_handle(message: types.Message, state: FSMContext):
     """
     Handler to add a referral when the admin submits the referral text.
     """
-    await db.add_referral(message.text)
+    await refdb.add_referral(message.text)
     await message.answer("Havola qo'shildi!")
     await state.finish()
 
@@ -68,7 +69,7 @@ async def all_referrals_handle(message: types.Message, state: FSMContext):
     Handler to display all referrals when the admin presses the "Barchasini ko'rish" button.
     """
     await state.finish()
-    referrals = await db.get_all_referrals()
+    referrals = await refdb.get_all_referrals()
     if not referrals:
         await message.answer("Havolalar mavjud emas!")
         return
@@ -100,7 +101,7 @@ async def get_referral_handler(call: types.CallbackQuery):
     Handler to show detailed information of a specific referral when clicked.
     """
     referral_id = int(call.data.split("_")[1])
-    referral = await db.get_referral_by_id(referral_id)
+    referral = await refdb.get_referral_by_id(referral_id)
     bot_username = (await bot.me).username
 
     ref_name = f"https://t.me/{bot_username}?start={referral['name']}"
@@ -118,7 +119,7 @@ async def delete_referrals_handler(call: types.CallbackQuery):
     referral_id = int(call.data.split("_")[1])
 
     # Delete the referral from the database using the extracted ID
-    await db.delete_referral_by_id(referral_id)
+    await refdb.delete_referral_by_id(referral_id)
 
     # Return to the main referral page
     await back_to_ref_main_handler(call)
@@ -132,7 +133,7 @@ async def back_to_ref_main_handler(call: types.CallbackQuery):
     """
     Handler to return to the main referral page when the "Back" button is clicked.
     """
-    referrals = await db.get_all_referrals()
+    referrals = await refdb.get_all_referrals()
 
     if referrals:
         extract = extracter(referrals, 10)
@@ -153,7 +154,7 @@ async def today_referrals_count(message: types.Message, state: FSMContext):
     Handler to display the count of yesterday's referrals.
     """
     await state.finish()
-    count_invites = await db.get_yesterday_referrals()
+    count_invites = await refdb.get_yesterday_referrals()
     if not count_invites:
         await message.answer("Hisobot mavjud emas!")
         return

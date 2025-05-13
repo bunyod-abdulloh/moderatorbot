@@ -1,16 +1,18 @@
 from typing import List
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.utils.exceptions import BotKicked, MigrateToChat, Unauthorized
+from aiogram.utils.exceptions import BotKicked, MigrateToChat
 from magic_filter import F
 
 from data.config import BOT_ID
-from loader import dp, bot, db
 from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import group_main_buttons
 from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button
+from loader import dp, bot, blstdb
+from services.error_service import notify_exception_to_admin
 from states.admin import AdminStates
-from utils.user_functions import extracter, logging_text
+from utils.user_functions import extracter
 
 # Xabarlar va ogohlantirish matni
 WARNING_TEXT = (
@@ -32,7 +34,7 @@ async def handle_media_group(album: List[types.Message]) -> types.MediaGroup:
 
 async def paginate_groups(call: types.CallbackQuery, current_page: int, next_page=False, prev_page=False):
     """Guruhlar ro'yxatini sahifalash."""
-    all_groups = await db.get_groups()
+    all_groups = await grpdb.get_groups()
     extract = extracter(all_datas=all_groups, delimiter=10)
     total_pages = len(extract)
 
@@ -47,14 +49,14 @@ async def paginate_groups(call: types.CallbackQuery, current_page: int, next_pag
     try:
         await call.answer(cache_time=0)
         await call.message.edit_text("Kerakli guruh tugmasiga bosing", reply_markup=markup)
-    except Exception:
-        pass
+    except Exception as err:
+        await notify_exception_to_admin(err=err)
 
 
 async def handle_group_info_(group_id, call: types.CallbackQuery):
     chat = await bot.get_chat(chat_id=group_id)
-    check_blacklist = await db.get_group_by_blacklist(group_id)
-    get_group_on_db = await db.get_group(group_id)
+    check_blacklist = await blstdb.get_group_by_blacklist(group_id)
+    get_group_on_db = await grpdb.get_group(group_id)
 
     user = await bot.get_chat_member(group_id, get_group_on_db['user_id'])
     bot_status = (await bot.get_chat_member(group_id, BOT_ID)).status
@@ -86,7 +88,7 @@ async def groups_handler(message: types.Message, state: FSMContext):
 @dp.message_handler(IsBotAdminFilter(), F.text == "Guruhlar haqida")
 async def groups_info_handler(message: types.Message, state: FSMContext):
     await state.finish()
-    all_groups = await db.get_groups()
+    all_groups = await grpdb.get_groups()
     if not all_groups:
         await message.answer("Guruhlar mavjud emas!")
         return
@@ -115,11 +117,11 @@ async def handle_group_info(call: types.CallbackQuery):
         await handle_group_info_(group_id, call)
     except MigrateToChat as err:
         new_id = err.migrate_to_chat_id
-        await db.update_group_id(new_id, group_id)
+        await grpdb.update_group_id(new_id, group_id)
         # Xatolikdan keyin funksiyani qayta chaqirish
         await handle_group_info_(new_id, call)
     except Exception as err:
-        await logging_text(err)
+        await notify_exception_to_admin(err=err)
 
 
 @dp.callback_query_handler(F.data.startswith(("post_to_group:", "media_to_group:")))
@@ -139,9 +141,9 @@ async def send_to_group_message(message: types.Message, state: FSMContext):
         group_name = (await bot.get_chat(chat_id=group_id)).full_name
         await message.answer(f"Xabar {group_name} ga yuborildi!")
     except BotKicked:
-        await db.delete_group(group_id)
-    except Exception as e:
-        await message.answer(f"Xatolik: {e}")
+        await grpdb.delete_group(group_id)
+    except Exception as err:
+        await notify_exception_to_admin(err=err)
     await state.finish()
 
 
@@ -155,15 +157,15 @@ async def send_to_group_media(message: types.Message, album: List[types.Message]
         group_name = (await bot.get_chat(chat_id=group_id)).full_name
         await message.answer(f"Xabar {group_name} ga yuborildi!")
     except BotKicked:
-        await db.delete_group(group_id)
-    except Exception as e:
-        await message.answer(f"Xatolik: {e}")
+        await grpdb.delete_group(group_id)
+    except Exception as err:
+        await notify_exception_to_admin(err=err)
     await state.finish()
 
 
 @dp.callback_query_handler(F.data == "back_to_groups")
 async def back_to_group_callback(call: types.CallbackQuery):
-    all_groups = await db.get_groups()
+    all_groups = await grpdb.get_groups()
     extract = extracter(all_datas=all_groups, delimiter=10)
     markup = await view_groups_ibutton(extract[0], current_page=1, all_pages=len(extract))
     await call.message.edit_text("Kerakli guruh tugmasiga bosing", reply_markup=markup)
