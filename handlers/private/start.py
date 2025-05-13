@@ -27,7 +27,7 @@ async def bot_start(message: types.Message, state: FSMContext):
             f"\n/ban - Ban"
             f"\n/unban - Bandan chiqarish"
             f"\n\nUshbu buyruqlar botni biror guruhga admin qilganingizda ishlaydi!")
-    text_ = ("Bu bot orqali siz guruhingizdagi ruxsatsiz jo'natilgan reklamalarni o'chiraman "
+    text += ("Bu bot orqali siz guruhingizdagi ruxsatsiz jo'natilgan reklamalarni o'chiraman "
              "(jpg, telefon) raqam, havola) shakldagilarni, hamda guruhga foydalanuvchi chiqgani va kirgani haqidagi "
              "xabarni o'chiraman. Mendan to'laqonli foydalanish uchun guruhingizga qo'shib keyin adminlik berishingiz "
              "kerak. Meni boshqa botlardan afzalligim reklamalar jo'natmayman.")
@@ -37,7 +37,7 @@ async def bot_start(message: types.Message, state: FSMContext):
             await db.add_user_referral(message.get_args(), message.from_user.id)
             await message.delete()
 
-        await message.answer(text=text_, reply_markup=user_main_ibuttons())
+        await message.answer(text=text, reply_markup=user_main_ibuttons())
         await db.add_user(telegram_id=message.from_user.id)
     except Exception as err:
         await notify_exception_to_admin(err=err)
