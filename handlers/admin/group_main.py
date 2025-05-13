@@ -9,7 +9,7 @@ from data.config import BOT_ID
 from filters.admins import IsBotAdminFilter
 from keyboards.default.admin_buttons import group_main_buttons
 from keyboards.inline.admin_ibuttons import view_groups_ibutton, group_button
-from loader import dp, bot, blstdb
+from loader import dp, bot, blstdb, grpdb
 from services.error_service import notify_exception_to_admin
 from states.admin import AdminStates
 from utils.user_functions import extracter
