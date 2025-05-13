@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from data.config import ADMIN_GROUP_ID
+from data.config import ADMIN_GROUP
 from loader import bot
 
 cancel_text = "Jarayonni bekor qilish uchun /bekor buyrug'ini kiriting!"
@@ -20,5 +20,5 @@ async def logging_text(err):
     logging.error("Traceback:\n" + traceback.format_exc())
     error_text = f"Xatolik:\n{err}\n\nTraceback:\n" + traceback.format_exc()
     await bot.send_message(
-        chat_id=ADMIN_GROUP_ID, text=error_text
+        chat_id=ADMIN_GROUP, text=error_text
     )
