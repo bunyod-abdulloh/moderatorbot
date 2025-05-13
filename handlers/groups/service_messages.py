@@ -9,27 +9,10 @@ from loader import dp, bot, db
 from services.error_service import notify_exception_to_admin
 
 
-def get_restrict_permissions(can_send: bool):
-    return types.ChatPermissions(
-        can_send_messages=can_send,
-        can_send_media_messages=can_send,
-        can_send_other_messages=can_send,
-        can_invite_users=True
-    )
-
-
-async def restrict_message(message: types.Message, member_names: list, group: list):
-    msg = await message.answer(
-        text=f"Xush kelibsiz, {', '.join(member_names)}!\n\nGuruhda yozish uchun {group['users']} ta "
-             f"foydalanuvchi qo'shishingiz lozim!")
-    return msg
-
-
 @dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.LEFT_CHAT_MEMBER)
 async def banned_member(message: types.Message):
     try:
         await message.delete()
-
     except BotKicked:
         await bot.send_message(
             chat_id=ADMINS[0],
@@ -45,32 +28,30 @@ async def banned_member(message: types.Message):
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
-        # Qora ro'yxat tekshiruvi
-        check_blacklist = await db.get_group_by_blacklist(message.chat.id)
-
-        if not check_blacklist:
-            await message.answer("Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!")
+        if not await db.get_group_by_blacklist(message.chat.id):
+            await message.answer(
+                "Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!"
+            )
             await bot.leave_chat(message.chat.id)
             return
 
-        member_names = []
-        add_bot = False
-        for member in message.new_chat_members:
-            # Xush kelibsizlar uchun ism yig‘iladi
-            member_names.append(member.full_name)
+        # Xush kelibsizlar uchun ismlar
+        member_names = [m.full_name for m in message.new_chat_members if not m.is_bot]
 
-            # Agar botning o‘zi qo‘shilgan bo‘lsa
-            if member.id == BOT_ID:
-                add_bot = True
+        # Bot o‘zi qo‘shilganini aniqlash
+        is_bot_added = any(m.id == BOT_ID for m in message.new_chat_members)
 
-        if add_bot:
-            await db.add_group(telegram_id=message.from_user.id, group_id=message.chat.id)
+        if is_bot_added:
+            await db.add_group(
+                telegram_id=message.from_user.id,
+                group_id=message.chat.id
+            )
+            bot_info = await bot.me
             await bot.send_message(
                 chat_id=ADMINS[0],
-                text=f"Sizning {(await bot.me).full_name} botingiz {message.chat.full_name} guruhiga qo'shildi!"
+                text=f"Sizning {bot_info.full_name} botingiz {message.chat.full_name} guruhiga qo'shildi!"
             )
 
-        # Xabar yuborish va o'chirish
         if member_names:
             msg = await message.answer(
                 f"Xush kelibsiz: {', '.join(member_names)}!", parse_mode="HTML"
@@ -80,32 +61,37 @@ async def new_member_admin(message: types.Message):
 
     except MessageCantBeDeleted:
         await message.answer(
-            text="Bot guruhga admin qilinmaganligi sababli foydalanuvchi guruhga qo'shilganligi haqidagi xabarni "
-                 "o'chirmadi!\n\nBot to'g'ri ishlashi uchun botni guruhga admin qilishingiz lozim!"
+            "Bot guruhga admin qilinmaganligi sababli foydalanuvchi guruhga qo'shilganligi haqidagi xabarni "
+            "o'chira olmadi!\n\nBot to'g'ri ishlashi uchun uni admin qiling!"
         )
-
     except Exception as err:
         await notify_exception_to_admin(err=err)
 
 
-# Bot guruhda bo'lsa va admin bo'lsa yangi qo'shilgan odamlarni ushlaydigan handler
+# Bot guruhda admin bo'lsa yangi qo'shilganlarni tutib oluvchi handler
 @dp.message_handler(IsGroupAndBotAdmin(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def handle_new_chat_members(message: types.Message):
     try:
-        member_names = []
+        # Faqatgina foydalanuvchi bo‘lgan a'zolarning ismlari
+        member_names = [m.full_name for m in message.new_chat_members if not m.is_bot]
 
-        for member in message.new_chat_members:
-            if member.is_bot:
-                await message.chat.kick(user_id=member.id)
-            else:
-                member_names.append(member.full_name)
+        # Bot bo‘lsa — chiqazib yuboriladi
+        for bot_member in filter(lambda m: m.is_bot, message.new_chat_members):
+            await message.chat.kick(user_id=bot_member.id)
+            await message.reply(text=f"{message.from_user.full_name} guruhga bot qo'shish mumkin emas!")
 
+        # Foydalanuvchilarga xush kelibsiz xabari
         if member_names:
             msg = await message.answer(
                 f"Xush kelibsiz: {', '.join(member_names)}!", parse_mode="HTML"
             )
             await asyncio.sleep(5)
             await message.chat.delete_message(msg.message_id)
+
+    except MessageCantBeDeleted:
+        await message.answer(
+            "Xabarni o‘chira olmadim, ehtimol bot admin emas. Iltimos, unga admin huquqi bering!"
+        )
 
     except Exception as err:
         await notify_exception_to_admin(err=err)

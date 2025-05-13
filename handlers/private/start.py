@@ -1,12 +1,12 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
+from keyboards.default.user_dbuttons import user_main_dbuttons
 from magic_filter import F
 
-from keyboards.default.user_dbuttons import user_main_dbuttons
 from keyboards.inline.user_ibuttons import user_main_ibuttons
-from loader import dp, db, bot
-from utils.user_functions import logging_text
+from loader import dp, db
+from services.error_service import notify_exception_to_admin
 
 
 @dp.message_handler(F.text == "/bekor", state="*")
@@ -36,13 +36,11 @@ async def bot_start(message: types.Message, state: FSMContext):
         if message.get_args():
             await db.add_user_referral(message.get_args(), message.from_user.id)
             await message.delete()
-        await bot.send_message(chat_id=message.from_user.id,
-                               text="Assalomu alaykum!", reply_markup=user_main_dbuttons)
 
         await message.answer(text=text_, reply_markup=user_main_ibuttons())
-        await db.add_user(message.from_user.id)
+        await db.add_user(telegram_id=message.from_user.id)
     except Exception as err:
-        await logging_text(err)
+        await notify_exception_to_admin(err=err)
 
 
 @dp.message_handler(F.text == "Bosh sahifa")
