@@ -5,7 +5,7 @@ from aiogram.utils.exceptions import MessageCantBeDeleted, BotKicked
 
 from data.config import ADMINS, BOT_ID
 from filters.group_chat import IsGroupAdminOrOwner, IsGroupAndBotAdmin
-from loader import dp, bot, grpdb
+from loader import dp, bot, grpdb, blstdb
 from services.error_service import notify_exception_to_admin
 
 
@@ -28,7 +28,7 @@ async def banned_member(message: types.Message):
 @dp.message_handler(IsGroupAdminOrOwner(), content_types=types.ContentType.NEW_CHAT_MEMBERS)
 async def new_member_admin(message: types.Message):
     try:
-        if not await grpdb.get_group_by_blacklist(message.chat.id):
+        if not await blstdb.get_group_by_blacklist(message.chat.id):
             await message.answer(
                 "Botning faoliyati ushbu guruh uchun cheklangan! Bot adminiga murojaat qiling!"
             )
