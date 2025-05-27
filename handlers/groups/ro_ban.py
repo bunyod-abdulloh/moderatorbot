@@ -61,30 +61,30 @@ async def undo_read_only_mode(message: types.Message):
 
 
 # Ban user
-@dp.message_handler(IsGroupAndBotAdmin(), Command("ban", prefixes="!/"), AdminFilter())
-async def ban_user(message: types.Message):
-    member = message.reply_to_message.from_user
-    member_id = member.id
-
-    await message.chat.kick(user_id=member_id)
-    await message.answer(f"Foydalanuvchi {member.full_name} guruhdan haydaldi.")
-
-    service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
-    await asyncio.sleep(5)
-    await message.delete()
-    await service_message.delete()
-
-
-# Unban user
-@dp.message_handler(IsGroupAndBotAdmin(), Command("unban", prefixes="!/"), AdminFilter())
-async def unban_user(message: types.Message):
-    member = message.reply_to_message.from_user
-    member_id = member.id
-
-    await message.chat.unban(user_id=member_id)
-    await message.answer(f"Foydalanuvchi {member.full_name} bandan chiqarildi.")
-
-    service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
-    await asyncio.sleep(5)
-    await message.delete()
-    await service_message.delete()
+# @dp.message_handler(IsGroupAndBotAdmin(), Command("ban", prefixes="!/"), AdminFilter())
+# async def ban_user(message: types.Message):
+#     member = message.reply_to_message.from_user
+#     member_id = member.id
+#
+#     await message.chat.kick(user_id=member_id)
+#     await message.answer(f"Foydalanuvchi {member.full_name} guruhdan haydaldi.")
+#
+#     service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
+#     await asyncio.sleep(5)
+#     await message.delete()
+#     await service_message.delete()
+#
+#
+# # Unban user
+# @dp.message_handler(IsGroupAndBotAdmin(), Command("unban", prefixes="!/"), AdminFilter())
+# async def unban_user(message: types.Message):
+#     member = message.reply_to_message.from_user
+#     member_id = member.id
+#
+#     await message.chat.unban(user_id=member_id)
+#     await message.answer(f"Foydalanuvchi {member.full_name} bandan chiqarildi.")
+#
+#     service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
+#     await asyncio.sleep(5)
+#     await message.delete()
+#     await service_message.delete()

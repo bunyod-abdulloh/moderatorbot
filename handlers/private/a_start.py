@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
 from magic_filter import F
 
-from loader import dp, udb, refdb
+from loader import dp, udb
 from services.error_service import notify_exception_to_admin
 
 
@@ -16,24 +16,29 @@ async def bekor_command(message: types.Message, state: FSMContext):
 @dp.message_handler(CommandStart(), state="*")
 async def bot_start(message: types.Message, state: FSMContext):
     await state.finish()
-    text = (f"Salom, {message.from_user.full_name}!\n\n"
-            f"Buyruqlar"
-            f"\n\n/start - Botni ishga tushirish"
-            f"\n/admin - Admin panel"
-            f"\n/ro - Foydalanuvchini Read Only rejimiga o'tkazish"
-            f"\n/unro - RO rejimidan chiqarish"
-            f"\n/ban - Ban"
-            f"\n/unban - Bandan chiqarish"
-            f"\n\nUshbu buyruqlar botni biror guruhga admin qilganingizda ishlaydi!")
-    text += ("Bu bot orqali siz guruhingizdagi ruxsatsiz jo'natilgan reklamalarni o'chiraman "
-             "(jpg, telefon) raqam, havola) shakldagilarni, hamda guruhga foydalanuvchi chiqgani va kirgani haqidagi "
-             "xabarni o'chiraman. Mendan to'laqonli foydalanish uchun guruhingizga qo'shib keyin adminlik berishingiz "
-             "kerak. Meni boshqa botlardan afzalligim reklamalar jo'natmayman.")
+    text = (f"👋 Assalomu alaykum, {message.from_user.full_name}!\n\n"
+            f"Guruhlaringizni toza va tartibli saqlashni istaysizmi? Unda Siz to‘g‘ri joydasiz! Bu bot — "
+            f"spam va tartibsizliklarga qarshi samarali yechim! 💪\n\n"
+            f"📌 <b>Asosiy buyruqlar:</b>"
+            f"\n/start - Botni ishga tushirish"
+            f"\n/ro - Foydalanuvchini Read Only (yozish huquqini cheklash) rejimiga o'tkazish"
+            f"\n/unro - Read Only rejimidan chiqarish\n\n")
+
+    text += ("🤖 <b>Bot quyidagi muhim funksiyalarni bajaradi:</b>\n\n"
+             "✅ Guruhga kirgan va chiqqanlik haqidagi xabarlarni avtomatik o‘chiradi\n"
+             "✅ Boshqa guruhlardan yuborilgan xabarlarni yo‘q qiladi\n"
+             "✅ Har xil reklama, spam va telefon raqamlarini aniqlab, guruhni tozalaydi\n"
+             "✅ Guruhga begona botlar qo‘shilishini avtomatik bloklaydi\n"
+             "✅ Adminlarga foydalanuvchilarni yozishdan cheklash yoki cheklovdan chiqarish imkonini beradi\n"
+             "✅ O‘zi hech qanday reklama tarqatmaydi — 100% xavfsiz\n\n"
+             "⚠️ <b>Eslatma:</b> Bot to‘liq ishlashi uchun guruhingizda admin huquqiga ega bo‘lishi shart!\n\n"
+             "🔒 Guruhingizni tartibli, xavfsiz va professional holatda saqlashni xohlaysizmi? Unda darhol guruhingizga "
+             "botni qo‘shing va ozodalikni saqlang! 💼✅")
 
     try:
-        if message.get_args():
-            await refdb.add_user_referral(message.get_args(), message.from_user.id)
-            await message.delete()
+        # if message.get_args():
+        #     await refdb.add_user_referral(message.get_args(), message.from_user.id)
+        #     await message.delete()
 
         await message.answer(text=text)
         await udb.add_user(telegram_id=message.from_user.id)
