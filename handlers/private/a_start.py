@@ -30,10 +30,9 @@ async def bot_start(message: types.Message, state: FSMContext):
              "✅ Har xil reklama, spam va telefon raqamlarini aniqlab, guruhni tozalaydi\n"
              "✅ Guruhga begona botlar qo‘shilishini avtomatik bloklaydi\n"
              "✅ Adminlarga foydalanuvchilarni yozishdan cheklash yoki cheklovdan chiqarish imkonini beradi\n"
-             "✅ O‘zi hech qanday reklama tarqatmaydi — 100% xavfsiz\n\n"
+             "✅ O‘zi hech qanday reklama tarqatmaydi\n\n"
              "⚠️ <b>Eslatma:</b> Bot to‘liq ishlashi uchun guruhingizda admin huquqiga ega bo‘lishi shart!\n\n"
-             "🔒 Guruhingizni tartibli, xavfsiz va professional holatda saqlashni xohlaysizmi? Unda darhol guruhingizga "
-             "botni qo‘shing va ozodalikni saqlang! 💼✅")
+             )
 
     try:
         # if message.get_args():
