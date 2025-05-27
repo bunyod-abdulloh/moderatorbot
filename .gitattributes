@@ -1,0 +1,5 @@
+# Python fayllar faqat LF bo'lishi shart
+*.py text eol=lf
+
+# Boshqa barcha fayllar avtomatik aniqlansin
+* text=auto
