@@ -26,11 +26,11 @@ async def bot_start(message: types.Message, state: FSMContext):
             f"\n/unro - Read Only rejimidan chiqarish\n\n")
 
     text += ("🤖 <b>Bot quyidagi muhim funksiyalarni bajaradi:</b>\n\n"
-             "✅ Guruhga kirgan va chiqqanlik haqidagi xabarlarni avtomatik o‘chiradi\n"
-             "✅ Boshqa guruhlardan yuborilgan xabarlarni yo‘q qiladi\n"
-             "✅ Har xil reklama, spam va telefon raqamlarini aniqlab, guruhni tozalaydi\n"
-             "✅ Guruhga begona botlar qo‘shilishini avtomatik bloklaydi\n"
-             "✅ Adminlarga foydalanuvchilarni yozishdan cheklash yoki cheklovdan chiqarish imkonini beradi\n"
+             "✅ Guruhga kirgan va chiqqanlik haqidagi xabarlarni avtomatik o‘chiradi\n\n"
+             "✅ Boshqa guruhlardan yuborilgan xabarlarni o'chiradi\n\n"
+             "✅ Har xil reklama, spam va telefon raqamlarini aniqlab, guruhni tozalaydi\n\n"
+             "✅ Guruhga begona botlar qo‘shilishini avtomatik bloklaydi\n\n"
+             "✅ Adminlarga foydalanuvchilarni yozishdan cheklash yoki cheklovdan chiqarish imkonini beradi\n\n"
              "✅ O‘zi hech qanday reklama tarqatmaydi\n\n"
              "⚠️ <b>Eslatma:</b> Bot to‘liq ishlashi uchun guruhingizda admin huquqiga ega bo‘lishi shart!\n\n"
              )
