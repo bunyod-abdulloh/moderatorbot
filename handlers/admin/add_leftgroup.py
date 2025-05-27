@@ -4,7 +4,7 @@ from aiogram.utils.exceptions import Unauthorized
 from magic_filter import F
 
 from filters.admins import IsBotAdminFilter
-from loader import dp, bot, db, blstdb
+from loader import dp, bot, blstdb, grpdb
 from services.error_service import notify_exception_to_admin
 from states.admin import AdminStates
 

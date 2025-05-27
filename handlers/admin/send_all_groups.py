@@ -8,7 +8,7 @@ from magic_filter import F
 
 from filters.admins import IsBotAdminFilter
 from handlers.admin.group_main import WARNING_TEXT
-from loader import dp, db, bot, admdb
+from loader import dp, bot, admdb, grpdb
 from states.admin import AdminStates
 
 

@@ -3,6 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
 from magic_filter import F
 
+from keyboards.default.user import user_main_dkb
 from loader import dp, udb
 from services.error_service import notify_exception_to_admin
 
@@ -39,7 +40,7 @@ async def bot_start(message: types.Message, state: FSMContext):
         #     await refdb.add_user_referral(message.get_args(), message.from_user.id)
         #     await message.delete()
 
-        await message.answer(text=text)
+        await message.answer(text=text, reply_markup=user_main_dkb)
         await udb.add_user(telegram_id=message.from_user.id)
     except Exception as err:
         await notify_exception_to_admin(err=err)
