@@ -18,7 +18,7 @@ async def read_only_mode(message: types.Message):
         member_id = member.id
 
         command_parse = re.match(r"(!ro|/ro) ?(\d+)? ?([\w+\D]+)?", message.text)
-        time = int(command_parse.group(2) or 5)
+        time = int(command_parse.group(2) or 2)
         comment = command_parse.group(3)
 
         until_date = datetime.datetime.now() + datetime.timedelta(minutes=time)
@@ -28,7 +28,7 @@ async def read_only_mode(message: types.Message):
 
         msg = f"Foydalanuvchi {member.full_name} {time} daqiqa yozish huquqidan mahrum qilindi!"
         if comment:
-            msg += f"\nSabab:\n<b>{comment}</b>\n"
+            msg += f"\nSabab:\n<b>{comment}</b>\n\n"
         await message.answer(text=msg)
 
         service_message = await message.reply("Xabar 5 soniyadan so'ng o'chib ketadi.")
@@ -43,7 +43,7 @@ async def read_only_mode(message: types.Message):
 
 
 # Undo read-only mode
-@dp.message_handler(Command("unro", prefixes="!/"))
+@dp.message_handler(IsGroupAndBotAdmin(), Command("unro", prefixes="!/"), is_admin=True)
 async def undo_read_only_mode(message: types.Message):
     member = message.reply_to_message.from_user
     member_id = member.id
