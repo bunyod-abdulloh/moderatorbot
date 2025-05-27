@@ -1,9 +1,8 @@
 from aiogram import types
 from aiogram.dispatcher.filters import BoundFilter
-
 from aiogram.utils.exceptions import BotKicked, Unauthorized
 
-from loader import bot, db
+from loader import bot, grpdb
 
 chat_types = ['group', 'supergroup']
 
