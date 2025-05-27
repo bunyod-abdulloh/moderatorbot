@@ -6,12 +6,12 @@ from aiogram import types
 from aiogram.dispatcher.filters import Command
 from aiogram.utils.exceptions import BadRequest
 
-from filters import IsGroupAndBotAdmin, AdminFilter
+from filters import IsGroupAndBotAdmin
 from loader import dp
 from services.error_service import notify_exception_to_admin
 
 
-@dp.message_handler(IsGroupAndBotAdmin(), Command("ro", prefixes="!/"), AdminFilter())
+@dp.message_handler(IsGroupAndBotAdmin(), Command("ro", prefixes="!/"), is_admin=True)
 async def read_only_mode(message: types.Message):
     try:
         member = message.reply_to_message.from_user
@@ -26,12 +26,12 @@ async def read_only_mode(message: types.Message):
         await message.chat.restrict(user_id=member_id, can_send_messages=False, until_date=until_date)
         await message.reply_to_message.delete()
 
-        msg = f"Foydalanuvchi {member.full_name} {time} minut yozish huquqidan mahrum qilindi."
+        msg = f"Foydalanuvchi {member.full_name} {time} daqiqa yozish huquqidan mahrum qilindi!"
         if comment:
-            msg += f"\nSabab:\n<b>{comment}</b>"
+            msg += f"\nSabab:\n<b>{comment}</b>\n"
         await message.answer(text=msg)
 
-        service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
+        service_message = await message.reply("Xabar 5 soniyadan so'ng o'chib ketadi.")
         await asyncio.sleep(5)
         await message.delete()
         await service_message.delete()
@@ -43,7 +43,7 @@ async def read_only_mode(message: types.Message):
 
 
 # Undo read-only mode
-@dp.message_handler(IsGroupAndBotAdmin(), Command("unro", prefixes="!/"), AdminFilter())
+@dp.message_handler(Command("unro", prefixes="!/"))
 async def undo_read_only_mode(message: types.Message):
     member = message.reply_to_message.from_user
     member_id = member.id
@@ -54,7 +54,7 @@ async def undo_read_only_mode(message: types.Message):
     await message.chat.restrict(user_id=member_id, permissions=user_allowed, until_date=0)
     await message.answer(f"Foydalanuvchi {member.full_name} tiklandi.")
 
-    service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
+    service_message = await message.reply("Xabar 5 soniyadan so'ng o'chib ketadi.")
     await asyncio.sleep(5)
     await message.delete()
     await service_message.delete()
@@ -69,7 +69,7 @@ async def undo_read_only_mode(message: types.Message):
 #     await message.chat.kick(user_id=member_id)
 #     await message.answer(f"Foydalanuvchi {member.full_name} guruhdan haydaldi.")
 #
-#     service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
+#     service_message = await message.reply("Xabar 5 soniyadan so'ng o'chib ketadi.")
 #     await asyncio.sleep(5)
 #     await message.delete()
 #     await service_message.delete()
@@ -84,7 +84,7 @@ async def undo_read_only_mode(message: types.Message):
 #     await message.chat.unban(user_id=member_id)
 #     await message.answer(f"Foydalanuvchi {member.full_name} bandan chiqarildi.")
 #
-#     service_message = await message.reply("Xabar 5 sekunddan so'ng o'chib ketadi.")
+#     service_message = await message.reply("Xabar 5 soniyadan so'ng o'chib ketadi.")
 #     await asyncio.sleep(5)
 #     await message.delete()
 #     await service_message.delete()
